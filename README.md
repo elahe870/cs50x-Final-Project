@@ -1,2 +1,2 @@
 # cs50x-Final-Project
-GMP 
+GMP project
