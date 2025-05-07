@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block title %}Form Library{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+    <h2>Form Library</h2>
+    <p class="text-muted">Browse available GMP inspection forms below.</p>
+
+    <form method="POST" class="d-flex mb-3">
+        <input name="search" class="form-control me-2" type="search" placeholder="Search forms..." aria-label="Search">
+        <button class="btn btn-outline-primary me-2" type="submit">🔍 Search</button>
+        <a href="/forms" class="btn btn-outline-secondary">🔄 Refresh</a>
+        {% if session["role"] == "admin" %}
+            <a href="/forms/new" class="btn btn-primary ms-auto">➕ Add New Form</a>
+        {% endif %}
+    </form>
+
+    {% if forms %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for form in forms %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ form.name }}</h5>
+                        <p class="card-text text-muted">{{ form.description }}</p>
+                        <p class="text-end small">Created by: {{ form.created_by_name }}</p>
+                        <div class="d-flex justify-content-between">
+                            <a href="/forms/{{ form.id }}/preview" class="btn btn-outline-info btn-sm">👁️ Preview</a>
+                            {% if session["role"] == "admin" %}
+                                <a href="/forms/{{ form.id }}/edit" class="btn btn-outline-warning btn-sm">📝 Edit</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted mt-4">No forms found.</p>
+    {% endif %}
+</div>
+{% endblock %}

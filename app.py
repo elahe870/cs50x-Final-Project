@@ -105,4 +105,25 @@ def register():
         return render_template("register.html")
 
     return render_template("login.html", message="Registration successful!")
-  
+
+
+@app.route("/forms", methods=["GET", "POST"])
+@login_required
+def forms():
+    search_query = request.form.get("search") if request.method == "POST" else None
+
+    if search_query:
+        forms = db.execute(
+            """SELECT forms.*, users.username AS created_by_name
+               FROM forms JOIN users ON forms.created_by = users.id
+               WHERE forms.name LIKE ? ORDER BY forms.id DESC""",
+            f"%{search_query}%"
+        )
+    else:
+        forms = db.execute(
+            """SELECT forms.*, users.username AS created_by_name
+               FROM forms JOIN users ON forms.created_by = users.id
+               ORDER BY forms.id DESC"""
+        )
+
+    return render_template("form.html", forms=forms)
