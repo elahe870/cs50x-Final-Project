@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block title %}Add New Form{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+    <h2>Add New Form</h2>
+    <p class="text-muted">Define a new GMP inspection form and its fields.</p>
+
+    <form action="/forms_show/new" method="post">
+        <div class="mb-3">
+            <label for="name" class="form-label">Form Name</label>
+            <input type="text" class="form-control" name="name" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Form Description</label>
+            <textarea class="form-control" name="description" rows="3" required></textarea>
+        </div>
+
+        <hr>
+        <h5>Fields</h5>
+        <div id="fields">
+            <div class="field-group border rounded p-3 mb-3">
+                <div class="mb-2">
+                    <label>Label</label>
+                    <input type="text" name="field_label[]" class="form-control" required>
+                </div>
+                <div class="mb-2">
+                    <label>Field Type</label>
+                    <select name="field_type[]" class="form-select" required>
+                        <option value="text">Text</option>
+                        <option value="textarea">Textarea</option>
+                        <option value="select">Dropdown</option>
+                        <option value="radio">Radio</option>
+                        <option value="checkbox">Checkbox</option>
+                        <option value="number">Number</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label>Options (comma separated for select/radio/checkbox)</label>
+                    <input type="text" name="field_options[]" class="form-control">
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="field_required[]" checked>
+                    <label class="form-check-label">Required</label>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm mt-2 remove-field">Remove Field</button>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-secondary mb-3" id="addField">➕ Add Another Field</button>
+
+        <div class="d-grid">
+            <button type="submit" class="btn btn-primary">✅ Create Form</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById("addField").addEventListener("click", function () {
+    const fieldGroup = document.querySelector(".field-group");
+    const newGroup = fieldGroup.cloneNode(true);
+
+    // Reset values
+    newGroup.querySelectorAll("input, select").forEach(el => {
+        if (el.type === "checkbox") {
+            el.checked = true;
+        } else {
+            el.value = "";
+        }
+    });
+
+    document.getElementById("fields").appendChild(newGroup);
+});
+
+document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("remove-field")) {
+        const fields = document.querySelectorAll(".field-group");
+        if (fields.length > 1) {
+            e.target.closest(".field-group").remove();
+        }
+    }
+});
+</script>
+{% endblock %}

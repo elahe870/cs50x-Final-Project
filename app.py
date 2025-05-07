@@ -22,6 +22,8 @@ Session(app)
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///GMP.db")
 
+
+
 @app.route("/")
 @login_required
 def index():
@@ -107,9 +109,9 @@ def register():
     return render_template("login.html", message="Registration successful!")
 
 
-@app.route("/forms", methods=["GET", "POST"])
+@app.route("/forms_show", methods=["GET", "POST"])
 @login_required
-def forms():
+def forms_show():
     search_query = request.form.get("search") if request.method == "POST" else None
 
     if search_query:
@@ -126,4 +128,53 @@ def forms():
                ORDER BY forms.id DESC"""
         )
 
-    return render_template("form.html", forms=forms)
+    return render_template("forms_show.html", forms=forms)
+
+
+@app.route("/forms_show/<int:form_id>/preview")
+@login_required
+def preview_form(form_id):
+    form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
+    fields = db.execute("SELECT * FROM form_fields WHERE form_id = ? ORDER BY display_order", form_id)
+
+    if not form:
+        return apology("Form not found", 404)
+
+    return render_template("form_preview.html", form=form[0], fields=fields)
+
+
+@app.route("/forms_show/<int:form_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_form(form_id):
+    if request.method == "POST":
+        name = request.form.get("name")
+        description = request.form.get("description")
+
+        db.execute("UPDATE forms SET name = ?, description = ? WHERE id = ?", name, description, form_id)
+
+        # Optional: update fields too
+        return redirect("/forms_show")
+
+    form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
+    fields = db.execute("SELECT * FROM form_fields WHERE form_id = ? ORDER BY display_order", form_id)
+
+    if not form:
+        return apology("Form not found", 404)
+
+    return render_template("form_edit.html", form=form[0], fields=fields)
+
+
+@app.route("/forms_show/new", methods=["GET", "POST"])
+@login_required
+def new_form():
+    if request.method == "POST":
+        name = request.form.get("name")
+        description = request.form.get("description")
+        user_id = session["user_id"]
+
+        form_id = db.execute("INSERT INTO forms (name, description, created_by) VALUES (?, ?, ?)",
+                             name, description, user_id)
+
+        # Optional: add default fields or redirect to edit form to add fields
+        pass
+    return render_template("form_new.html")
