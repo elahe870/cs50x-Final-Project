@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block title %}Preview: {{ form.name }}{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+    <h2>{{ form.name }}</h2>
+    <p class="text-muted">{{ form.description }}</p>
+
+    <form>
+        {% for field in fields %}
+            <div class="mb-3">
+                <label class="form-label">{{ field.label }}{% if field.required %} *{% endif %}</label>
+
+                {% if field.field_type == 'text' %}
+                    <input type="text" class="form-control" disabled>
+
+                {% elif field.field_type == 'textarea' %}
+                    <textarea class="form-control" rows="3" disabled></textarea>
+
+                {% elif field.field_type == 'number' %}
+                    <input type="number" class="form-control" disabled>
+
+                {% elif field.field_type == 'date' %}
+                    <input type="date" class="form-control" disabled>
+
+                {% elif field.field_type == 'datetime' %}
+                    <input type="datetime-local" class="form-control" disabled>
+
+                {% elif field.field_type == 'radio' %}
+                    {% for option in field.options.split(',') %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="{{ field.label }}" disabled>
+                            <label class="form-check-label">{{ option.strip() }}</label>
+                        </div>
+                    {% endfor %}
+
+                {% elif field.field_type == 'checkbox' %}
+                    {% for option in field.options.split(',') %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" disabled>
+                            <label class="form-check-label">{{ option.strip() }}</label>
+                        </div>
+                    {% endfor %}
+
+                {% elif field.field_type == 'dropdown' %}
+                    <select class="form-select" disabled>
+                        {% for option in field.options.split(',') %}
+                            <option>{{ option.strip() }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </form>
+</div>
+{% endblock %}

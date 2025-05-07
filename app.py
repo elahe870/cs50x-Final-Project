@@ -174,7 +174,36 @@ def new_form():
 
         form_id = db.execute("INSERT INTO forms (name, description, created_by) VALUES (?, ?, ?)",
                              name, description, user_id)
+        
+        # get the fields from the form
+        fields = request.form.getlist("field_label")
+        field_types = request.form.getlist("field_type")
+        field_options = request.form.getlist("field_options")
+        field_required = request.form.getlist("field_required")
+        #display_order = request.form.getlist("display_order")
+        # 🔍 Add debugging here:
+        print("FIELDS:", fields)
+        print("TYPES:", field_types)
+        print("OPTIONS:", field_options)
+        
+        
+        # insert in to form_fields
+        for i in range(len(fields)):
+            field_label = fields[i]
+            field_type = field_types[i]
+            
+            if field_type in ["select", "radio", "checkbox"]:
+                field_option = field_options[i]
+            else:
+                field_option = None
 
-        # Optionals
-        pass
+            display_order_value = 1 
+            #if i < len(display_order) else i + 1  # fallback
+
+            db.execute("INSERT INTO form_fields (form_id, label, field_type, options, display_order) VALUES (?, ?, ?, ?, ?)",
+                       form_id, field_label, field_type, field_option, display_order_value) 
+  
+
+        flash("Form created successfully!")
+        return redirect(f"/forms_show/{form_id}/preview")
     return render_template("form_new.html")

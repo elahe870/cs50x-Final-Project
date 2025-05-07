@@ -24,11 +24,11 @@
             <div class="field-group border rounded p-3 mb-3">
                 <div class="mb-2">
                     <label>Label</label>
-                    <input type="text" name="field_label[]" class="form-control" required>
+                    <input type="text" name="field_label" class="form-control" required>
                 </div>
                 <div class="mb-2">
                     <label>Field Type</label>
-                    <select name="field_type[]" class="form-select" required>
+                    <select name="field_type" class="form-select" required>
                         <option value="text">Text</option>
                         <option value="textarea">Textarea</option>
                         <option value="select">Dropdown</option>
@@ -39,12 +39,13 @@
                 </div>
                 <div class="mb-2">
                     <label>Options (comma separated for select/radio/checkbox)</label>
-                    <input type="text" name="field_options[]" class="form-control">
+                    <input type="text" name="field_options" class="form-control">
                 </div>
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="field_required[]" checked>
+                    <input class="form-check-input" type="checkbox" name="field_required" checked>
                     <label class="form-check-label">Required</label>
                 </div>
+                
                 <button type="button" class="btn btn-danger btn-sm mt-2 remove-field">Remove Field</button>
             </div>
         </div>
