@@ -175,6 +175,6 @@ def new_form():
         form_id = db.execute("INSERT INTO forms (name, description, created_by) VALUES (?, ?, ?)",
                              name, description, user_id)
 
-        # Optional: add default fields or redirect to edit form to add fields
+        # Optionals
         pass
     return render_template("form_new.html")
