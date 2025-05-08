@@ -45,9 +45,10 @@
                     {% endfor %}
 
                 {% elif field.field_type == 'dropdown' %}
-                    <select class="form-select" disabled>
+                    <select class="form-select" name="{{ field.label }}" disabled>
                         {% for option in field.options.split(',') %}
-                            <option>{{ option.strip() }}</option>
+                            {% set opt = option.strip() %}
+                            <option value="{{ opt }}">{{ opt }}</option>
                         {% endfor %}
                     </select>
                 {% endif %}

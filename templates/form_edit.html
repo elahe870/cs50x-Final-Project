@@ -30,7 +30,7 @@
                     <select name="field_type" class="form-select" required>
                         <option value="text" {% if field.field_type == "text" %}selected{% endif %}>Text</option>
                         <option value="textarea" {% if field.field_type == "textarea" %}selected{% endif %}>Textarea</option>
-                        <option value="select" {% if field.field_type == "select" %}selected{% endif %}>Dropdown</option>
+                        <option value="dropdown" {% if field.field_type == "dropdown" %}selected{% endif %}>Dropdown</option>
                         <option value="radio" {% if field.field_type == "radio" %}selected{% endif %}>Radio</option>
                         <option value="checkbox" {% if field.field_type == "checkbox" %}selected{% endif %}>Checkbox</option>
                         <option value="number" {% if field.field_type == "number" %}selected{% endif %}>Number</option>
