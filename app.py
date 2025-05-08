@@ -161,7 +161,7 @@ def new_form():
         for i in range(len(fields)):
             label = fields[i]
             ftype = field_types[i]
-            options = field_options[i] if ftype in ["dropdown", "radio", "checkbox"] else None
+            options = field_options[i] if ftype in ["dropdown", "radio", "checkbox", "select"] else None
             required = 1 if str(i) in field_required else 0  # Store as integer boolean
             display_order = i + 1
 
@@ -211,7 +211,7 @@ def edit_form(form_id):
         for i in range(len(fields)):
             field_label = fields[i]
             field_type = field_types[i]
-            field_option = field_options[i] if field_type in ["dropdown", "radio", "checkbox"] else None
+            field_option = field_options[i] if field_type in ["select", "radio", "checkbox", "dropdown"] else None
             
             # Handle required checkbox logic
             required = 1 if str(i) in field_required else 0

@@ -44,8 +44,8 @@
                         </div>
                     {% endfor %}
 
-                {% elif field.field_type == 'dropdown' %}
-                    <select class="form-select" name="{{ field.label }}" disabled>
+                {% elif field.field_type == 'select' %}
+                    <select class="form-select" name="{{ field.label }}" >
                         {% for option in field.options.split(',') %}
                             {% set opt = option.strip() %}
                             <option value="{{ opt }}">{{ opt }}</option>
