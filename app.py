@@ -131,6 +131,52 @@ def forms_show():
     return render_template("forms_show.html", forms=forms)
 
 
+
+@app.route("/forms_show/new", methods=["GET", "POST"])
+@login_required
+def new_form():
+    if request.method == "POST":
+        # Get form metadata
+        name = request.form.get("name")
+        description = request.form.get("description")
+        user_id = session.get("user_id")  # Adjust if you use flask-login current_user.id
+
+        if not name or not description:
+            flash("Please provide both form name and description.", "warning")
+            return render_template("form_new.html")
+
+        # Insert new form and get its ID
+        form_id = db.execute(
+            "INSERT INTO forms (name, description, created_by) VALUES (?, ?, ?)",
+            name, description, user_id
+        )
+
+        # Get fields data from form
+        fields = request.form.getlist("field_label")
+        field_types = request.form.getlist("field_type")
+        field_options = request.form.getlist("field_options")
+        field_required = request.form.getlist("field_required")
+
+        # Insert each field into form_fields table
+        for i in range(len(fields)):
+            label = fields[i]
+            ftype = field_types[i]
+            options = field_options[i] if ftype in ["select", "radio", "checkbox"] else None
+            required = "on" if i < len(field_required) else "off"  # Checkbox handling
+            display_order = i + 1
+
+            db.execute(
+                "INSERT INTO form_fields (form_id, label, field_type, options, required, display_order) VALUES (?, ?, ?, ?, ?, ?)",
+                form_id, label, ftype, options, required, display_order
+            )
+
+        flash("Form created successfully!", "success")
+        return redirect(f"/forms_show/{form_id}/preview")
+
+    # GET request - render the empty form creation page
+    return render_template("form_new.html")
+
+
 @app.route("/forms_show/<int:form_id>/preview")
 @login_required
 def preview_form(form_id):
@@ -208,3 +254,6 @@ def delete_form(form_id):
 
     flash("Form deleted successfully.", "success")
     return redirect("/forms_show")
+
+
+    
