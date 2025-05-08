@@ -1,70 +1,71 @@
-{% extends "layout.html" %}
-
-{% block title %}Add New Form{% endblock %}
+{% block title %}Edit Form{% endblock %}
 
 {% block main %}
 <div class="container mt-4">
-    <h2>Add New Form</h2>
-    <p class="text-muted">Define a new GMP inspection form and its fields.</p>
+    <h2>Edit Form</h2>
+    <p class="text-muted">Modify form details and fields.</p>
 
-    <form action="/forms_show/new" method="post">
+    <form action="/forms_show/{{ form.id }}/edit" method="post">
         <div class="mb-3">
             <label for="name" class="form-label">Form Name</label>
-            <input type="text" class="form-control" name="name" required>
+            <input type="text" class="form-control" name="name" value="{{ form.name }}" required>
         </div>
 
         <div class="mb-3">
             <label for="description" class="form-label">Form Description</label>
-            <textarea class="form-control" name="description" rows="3" required></textarea>
+            <textarea class="form-control" name="description" rows="3" required>{{ form.description }}</textarea>
         </div>
 
         <hr>
         <h5>Fields</h5>
         <div id="fields">
+            {% for field in fields %}
             <div class="field-group border rounded p-3 mb-3">
                 <div class="mb-2">
                     <label>Label</label>
-                    <input type="text" name="field_label" class="form-control" required>
+                    <input type="text" name="field_label" class="form-control" value="{{ field.label }}" required>
                 </div>
                 <div class="mb-2">
                     <label>Field Type</label>
                     <select name="field_type" class="form-select" required>
-                        <option value="text">Text</option>
-                        <option value="textarea">Textarea</option>
-                        <option value="select">Dropdown</option>
-                        <option value="radio">Radio</option>
-                        <option value="checkbox">Checkbox</option>
-                        <option value="number">Number</option>
-                        <option value="date">Date</option>
+                        <option value="text" {% if field.field_type == "text" %}selected{% endif %}>Text</option>
+                        <option value="textarea" {% if field.field_type == "textarea" %}selected{% endif %}>Textarea</option>
+                        <option value="select" {% if field.field_type == "select" %}selected{% endif %}>Dropdown</option>
+                        <option value="radio" {% if field.field_type == "radio" %}selected{% endif %}>Radio</option>
+                        <option value="checkbox" {% if field.field_type == "checkbox" %}selected{% endif %}>Checkbox</option>
+                        <option value="number" {% if field.field_type == "number" %}selected{% endif %}>Number</option>
+                        <option value="date" {% if field.field_type == "date" %}selected{% endif %}>Date</option>
                     </select>
                 </div>
                 <div class="mb-2">
                     <label>Options (comma separated for select/radio/checkbox)</label>
-                    <input type="text" name="field_options" class="form-control">
+                    <input type="text" name="field_options" class="form-control" 
+                           value="{{ field.options if field.options }}">
                 </div>
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="field_required" checked>
+                    <input class="form-check-input" type="checkbox" name="field_required" 
+                           {% if field.required %}checked{% endif %}>
                     <label class="form-check-label">Required</label>
                 </div>
                 
                 <button type="button" class="btn btn-danger btn-sm mt-2 remove-field">Remove Field</button>
             </div>
+            {% endfor %}
         </div>
 
         <button type="button" class="btn btn-secondary mb-3" id="addField">➕ Add Another Field</button>
 
         <div class="d-grid">
-            <button type="submit" class="btn btn-primary">✅ Create Form</button>
+            <button type="submit" class="btn btn-primary">💾 Save Changes</button>
         </div>
     </form>
 </div>
 
+<!-- Include the same JavaScript as form_new.html -->
 <script>
 document.getElementById("addField").addEventListener("click", function () {
     const fieldGroup = document.querySelector(".field-group");
     const newGroup = fieldGroup.cloneNode(true);
-
-    // Reset values
     newGroup.querySelectorAll("input, select").forEach(el => {
         if (el.type === "checkbox") {
             el.checked = true;
@@ -72,7 +73,6 @@ document.getElementById("addField").addEventListener("click", function () {
             el.value = "";
         }
     });
-
     document.getElementById("fields").appendChild(newGroup);
 });
 
@@ -84,5 +84,6 @@ document.addEventListener("click", function (e) {
         }
     }
 });
+
 </script>
 {% endblock %}

@@ -28,8 +28,12 @@
                         <div class="d-flex justify-content-between">
                             <a href="/forms_show/{{ form.id }}/preview" class="btn btn-outline-info btn-sm">👁️ Preview</a>
                             
-                                <a href="/forms_show/{{ form.id }}/edit" class="btn btn-outline-warning btn-sm">📝 Edit</a>
-                           
+                            <a href="/forms_show/{{ form.id }}/edit" class="btn btn-outline-warning btn-sm">📝 Edit</a>
+                            
+                            <!-- Delete button -->
+                            <form method="POST" action="/forms_show/{{ form.id }}/delete" onsubmit="return confirm('Are you sure you want to delete this form? This action cannot be undone.');" style="display:inline;">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Delete</button>
+                            </form>
                         </div>
                     </div>
                 </div>

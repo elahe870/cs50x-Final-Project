@@ -147,63 +147,64 @@ def preview_form(form_id):
 @login_required
 def edit_form(form_id):
     if request.method == "POST":
+        # Update form details
         name = request.form.get("name")
         description = request.form.get("description")
-
-        db.execute("UPDATE forms SET name = ?, description = ? WHERE id = ?", name, description, form_id)
-
-        # Optional: update fields too
-        return redirect("/forms_show")
-
-    form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
-    fields = db.execute("SELECT * FROM form_fields WHERE form_id = ? ORDER BY display_order", form_id)
-
-    if not form:
-        return apology("Form not found", 404)
-
-    return render_template("form_edit.html", form=form[0], fields=fields)
-
-
-@app.route("/forms_show/new", methods=["GET", "POST"])
-@login_required
-def new_form():
-    if request.method == "POST":
-        name = request.form.get("name")
-        description = request.form.get("description")
-        user_id = session["user_id"]
-
-        form_id = db.execute("INSERT INTO forms (name, description, created_by) VALUES (?, ?, ?)",
-                             name, description, user_id)
+        db.execute("UPDATE forms SET name = ?, description = ? WHERE id = ?",
+                   name, description, form_id)
         
-        # get the fields from the form
+        # First delete existing fields
+        db.execute("DELETE FROM form_fields WHERE form_id = ?", form_id)
+        
+        # Then add updated fields (similar to new_form)
         fields = request.form.getlist("field_label")
         field_types = request.form.getlist("field_type")
         field_options = request.form.getlist("field_options")
         field_required = request.form.getlist("field_required")
-        #display_order = request.form.getlist("display_order")
-        # 🔍 Add debugging here:
-        print("FIELDS:", fields)
-        print("TYPES:", field_types)
-        print("OPTIONS:", field_options)
-        
-        
-        # insert in to form_fields
+
         for i in range(len(fields)):
             field_label = fields[i]
             field_type = field_types[i]
+            field_option = field_options[i] if field_type in ["select", "radio", "checkbox"] else None
             
-            if field_type in ["select", "radio", "checkbox"]:
-                field_option = field_options[i]
-            else:
-                field_option = None
+            # Handle required checkbox logic
+            is_required = "on" if str(i) in field_required else "off"
 
-            display_order_value = 1 
-            #if i < len(display_order) else i + 1  # fallback
+            db.execute("""INSERT INTO form_fields 
+                          (form_id, label, field_type, options, required, display_order) 
+                          VALUES (?, ?, ?, ?, ?, ?)""",
+                       form_id, field_label, field_type, field_option, is_required, i+1)
 
-            db.execute("INSERT INTO form_fields (form_id, label, field_type, options, display_order) VALUES (?, ?, ?, ?, ?)",
-                       form_id, field_label, field_type, field_option, display_order_value) 
-  
-
-        flash("Form created successfully!")
+        flash("Form updated successfully!")
         return redirect(f"/forms_show/{form_id}/preview")
-    return render_template("form_new.html")
+    
+    else:
+        # GET request - load existing data
+        form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)[0]
+        fields = db.execute("SELECT * FROM form_fields WHERE form_id = ? ORDER BY display_order", form_id)
+        return render_template("form_edit.html", form=form, fields=fields)
+
+
+
+@app.route("/forms_show/<int:form_id>/delete", methods=["POST"])
+@login_required
+def delete_form(form_id):
+    # Optional: Verify the current user owns the form or has permission
+    form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
+    if not form:
+        flash("Form not found.", "danger")
+        return redirect("/forms_show")
+
+    # Example permission check (adjust based on your auth system)
+    if form[0]["created_by"] != session["user_id"]:
+        flash("You do not have permission to delete this form.", "danger")
+        return redirect("/forms_show")
+
+    # Delete associated fields first (if your DB requires)
+    db.execute("DELETE FROM form_fields WHERE form_id = ?", form_id)
+
+    # Delete the form itself
+    db.execute("DELETE FROM forms WHERE id = ?", form_id)
+
+    flash("Form deleted successfully.", "success")
+    return redirect("/forms_show")
