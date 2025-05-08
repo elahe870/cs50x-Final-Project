@@ -258,7 +258,7 @@ def delete_form(form_id):
 
 @app.route("/inspection_show", methods=["GET", "POST"])
 @login_required
-def inspection():
+def inspection_show():
     search_query = request.form.get("search") if request.method == "POST" else None
 
     if search_query:
