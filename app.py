@@ -259,20 +259,24 @@ def delete_form(form_id):
 @app.route("/inspection_show", methods=["GET", "POST"])
 @login_required
 def inspection_show():
-    search_query = request.form.get("search") if request.method == "POST" else None
+    user_id = session["user_id"]
+    
+    # Get all available forms
+    forms = db.execute("SELECT id, name FROM forms")
 
-    if search_query:
-        forms = db.execute(
-            """SELECT inspections.*, users.username AS created_by_name
-               FROM forms JOIN users ON inspections.inspector_id = users.id
-               ORDER BY inspections.id DESC""",
-            f"%{search_query}%"
-        )
-    else:
-        forms = db.execute(
-            """SELECT inspections.*, users.username AS created_by_name
-               FROM forms JOIN users ON inspections.inspector_id = users.id
-               ORDER BY inspections.id DESC"""
-        )
+    selected_form_id = None
+    inspections = []
 
-    return render_template("inspection_show.html", forms=forms)
+    if request.method == "POST":
+        selected_form_id = request.form.get("forms.id")
+        if selected_form_id:
+            inspections = db.execute(
+                """SELECT inspections.*, users.username AS created_by_name
+                   FROM inspections
+                   JOIN users ON inspections.inspector_id = users.id
+                   WHERE inspections.form_id = ? AND inspections.inspector_id = ?
+                   ORDER BY inspections.id DESC""",
+                selected_form_id, user_id
+            )
+
+    return render_template("inspection_show.html", forms=forms, selected_form_id=selected_form_id, inspections=inspections)
