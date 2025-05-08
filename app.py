@@ -162,7 +162,7 @@ def new_form():
             label = fields[i]
             ftype = field_types[i]
             options = field_options[i] if ftype in ["select", "radio", "checkbox"] else None
-            required = "on" if i < len(field_required) else "off"  # Checkbox handling
+            required = 1 if str(i) in field_required else 0  # Store as integer boolean
             display_order = i + 1
 
             db.execute(
@@ -214,12 +214,12 @@ def edit_form(form_id):
             field_option = field_options[i] if field_type in ["select", "radio", "checkbox"] else None
             
             # Handle required checkbox logic
-            is_required = "on" if str(i) in field_required else "off"
+            required = 1 if str(i) in field_required else 0
 
             db.execute("""INSERT INTO form_fields 
                           (form_id, label, field_type, options, required, display_order) 
                           VALUES (?, ?, ?, ?, ?, ?)""",
-                       form_id, field_label, field_type, field_option, is_required, i+1)
+                       form_id, field_label, field_type, field_option, required, i+1)
 
         flash("Form updated successfully!")
         return redirect(f"/forms_show/{form_id}/preview")

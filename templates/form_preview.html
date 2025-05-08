@@ -10,7 +10,8 @@
     <form>
         {% for field in fields %}
             <div class="mb-3">
-                <label class="form-label">{{ field.label }}{% if field.required %} *{% endif %}</label>
+                
+                <label class="form-label">{{ field.label }}{% if field.required == 1 %} *{% endif %}</label>
 
                 {% if field.field_type == 'text' %}
                     <input type="text" class="form-control" disabled>
