@@ -13,23 +13,42 @@
             <label><strong>{{ field.label }}</strong>{% if field.required %} *{% endif %}</label><br>
 
             {% if field.field_type == 'text' %}
-                <input type="text" name="field_{{ field.id }}" class="form-control" required="{{ field.required }}">
-            
+                <input type="text" name="field_{{ field.id }}" class="form-control" {% if field.required %}required{% endif %}>
+
             {% elif field.field_type == 'textarea' %}
-                <textarea name="field_{{ field.id }}" class="form-control" rows="3" required="{{ field.required }}"></textarea>
-            
+                <textarea name="field_{{ field.id }}" class="form-control" rows="3" {% if field.required %}required{% endif %}></textarea>
+
             {% elif field.field_type == 'select' and field.options %}
-                <select name="field_{{ field.id }}" class="form-control" required="{{ field.required }}">
+                <select name="field_{{ field.id }}" class="form-control" {% if field.required %}required{% endif %}>
                     <option value="">-- Select --</option>
                     {% for option in field.options.split(',') %}
                         <option value="{{ option|trim }}">{{ option|trim }}</option>
                     {% endfor %}
                 </select>
-            
-            {% endif %}
 
-            <label for="comment_{{ field.id }}">Comment (optional):</label><br>
-            <input type="text" name="comment_{{ field.id }}" class="form-control">
+            {% elif field.field_type == 'date' %}
+                <input type="date" name="field_{{ field.id }}" class="form-control" {% if field.required %}required{% endif %}>
+
+            {% elif field.field_type == 'number' %}
+                <input type="number" name="field_{{ field.id }}" class="form-control" {% if field.required %}required{% endif %}>
+
+            {% elif field.field_type == 'radio' and field.options %}
+                {% for option in field.options.split(',') %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="field_{{ field.id }}" id="field_{{ field.id }}_{{ loop.index0 }}" value="{{ option|trim }}" {% if field.required %}required{% endif %}>
+                        <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index0 }}">{{ option|trim }}</label>
+                    </div>
+                {% endfor %}
+
+            {% elif field.field_type == 'checkbox' and field.options %}
+                {% for option in field.options.split(',') %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="field_{{ field.id }}[]" id="field_{{ field.id }}_{{ loop.index0 }}" value="{{ option|trim }}">
+                        <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index0 }}">{{ option|trim }}</label>
+                    </div>
+                {% endfor %}
+
+            {% endif %}
         </div>
         <hr>
     {% endfor %}

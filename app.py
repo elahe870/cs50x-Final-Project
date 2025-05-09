@@ -235,24 +235,37 @@ def edit_form(form_id):
 @app.route("/forms_show/<int:form_id>/delete", methods=["POST"])
 @login_required
 def delete_form(form_id):
-    # Optional: Verify the current user owns the form or has permission
+    # Verify the current user owns the form or has permission
     form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
     if not form:
         flash("Form not found.", "danger")
         return redirect("/forms_show")
 
-    # Example permission check (adjust based on your auth system)
     if form[0]["created_by"] != session["user_id"]:
         flash("You do not have permission to delete this form.", "danger")
         return redirect("/forms_show")
 
-    # Delete associated fields first (if your DB requires)
-    db.execute("DELETE FROM form_fields WHERE form_id = ?", form_id)
+    # Count related inspections
+    inspections = db.execute("SELECT COUNT(*) AS count FROM inspections WHERE form_id = ?", form_id)[0]["count"]
 
-    # Delete the form itself
-    db.execute("DELETE FROM forms WHERE id = ?", form_id)
+    # Count related inspection fields via inspections
+    fields_count = db.execute("""
+        SELECT COUNT(*) AS count
+        FROM inspection_fields
+        JOIN inspections ON inspection_fields.inspection_id = inspections.id
+        WHERE inspections.form_id = ?
+    """, form_id)[0]["count"]
 
-    flash("Form deleted successfully.", "success")
+    if inspections > 0 or fields_count > 0:
+        return apology("Cannot delete form: it has related inspections or fields.")
+    else:
+        # Delete associated fields first (if your DB requires)
+        db.execute("DELETE FROM form_fields WHERE form_id = ?", form_id)
+
+        # Delete the form itself
+        db.execute("DELETE FROM forms WHERE id = ?", form_id)
+
+        flash("Form deleted successfully.", "success")
     return redirect("/forms_show")
 
 
@@ -285,11 +298,16 @@ def inspection_show():
 def inspection_new():
     form_id = request.args.get('form_id')  # from URL ?form_id=1
     if not form_id:
+        flash("Form ID missing.", "danger")
         return redirect("/inspection_show")
 
     # GET method: show form
     if request.method == "GET":
         form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
+        if not form:
+            flash("Form not found.", "danger")
+            return redirect("/inspection_show")
+
         fields = db.execute("""
             SELECT * FROM form_fields
             WHERE form_id = ?
@@ -299,7 +317,29 @@ def inspection_new():
 
     # POST method: save submitted inspection
     user_id = session["user_id"]
-    
+
+    # Fetch fields to validate required inputs
+    fields = db.execute("SELECT * FROM form_fields WHERE form_id = ?", form_id)
+
+    # Validate required fields
+    missing_fields = []
+    for field in fields:
+        field_name = f"field_{field['id']}"
+        if field['field_type'] == 'checkbox':
+            # For checkboxes, getlist returns list of selected options
+            values = request.form.getlist(field_name + "[]")
+            if field['required'] and not values:
+                missing_fields.append(field['label'])
+        else:
+            value = request.form.get(field_name)
+            if field['required'] and (value is None or value.strip() == ""):
+                missing_fields.append(field['label'])
+
+    if missing_fields:
+        flash(f"Please fill out required fields: {', '.join(missing_fields)}", "warning")
+        form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)[0]
+        return render_template('inspection_new.html', form=form, fields=fields)
+
     # Insert into inspections table
     db.execute("""
         INSERT INTO inspections (form_id, inspector_id, location, notes)
@@ -309,16 +349,39 @@ def inspection_new():
     # Get the inspection ID of the newly inserted inspection
     inspection_id = db.execute("SELECT last_insert_rowid() AS id")[0]["id"]
 
-    # Now insert all inspection field values
-    field_entries = db.execute("SELECT id FROM form_fields WHERE form_id = ?", form_id)
-
-    for field in field_entries:
+    # Insert all inspection field values
+    for field in fields:
         field_id = field["id"]
-        value = request.form.get(f"field_{field_id}")
-        comment = request.form.get(f"comment_{field_id}")
+        field_name = f"field_{field_id}"
+
+        if field['field_type'] == 'checkbox':
+            # Multiple values possible, join as comma-separated string
+            values = request.form.getlist(field_name + "[]")
+            value_str = ",".join(values) if values else None
+        else:
+            # Single value fields
+            value_str = request.form.get(field_name)
+
         db.execute("""
             INSERT INTO inspection_fields (inspection_id, field_id, value, comment)
-            VALUES (?, ?, ?, ?)
-        """, inspection_id, field_id, value, comment)
+            VALUES (?, ?, ?, NULL)
+        """, inspection_id, field_id, value_str)
 
+    flash("Inspection submitted successfully!", "success")
     return redirect("/inspection_show")
+
+
+@app.route("/inspection/<int:inspection_id>")
+def inspection_preview(inspection_id):
+    # Show details (read-only)
+    ...
+
+@app.route("/inspection/<int:inspection_id>/edit", methods=["GET", "POST"])
+def inspection_edit(inspection_id):
+    # Edit logic
+    ...
+
+@app.route("/inspection/<int:inspection_id>/delete", methods=["POST"])
+def inspection_delete(inspection_id):
+    # Delete inspection and redirect
+    ...
