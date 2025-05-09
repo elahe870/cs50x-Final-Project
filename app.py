@@ -5,6 +5,10 @@ from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
+
+
+
+
 from helpers import apology, login_required
 
 import datetime
@@ -293,6 +297,9 @@ def inspection_show():
         selected_form_id=selected_form_id, inspections=inspections)
 
 
+
+from datetime import datetime
+
 @app.route('/inspection_new', methods=['GET', 'POST'])
 @login_required
 def inspection_new():
@@ -318,48 +325,59 @@ def inspection_new():
     # POST method: save submitted inspection
     user_id = session["user_id"]
 
-    # Fetch fields to validate required inputs
+    # Fetch fields to validate required inputs and date validation
     fields = db.execute("SELECT * FROM form_fields WHERE form_id = ?", form_id)
 
-    # Validate required fields
-    missing_fields = []
+    errors = []
     for field in fields:
         field_name = f"field_{field['id']}"
+        value = None
+
         if field['field_type'] == 'checkbox':
-            # For checkboxes, getlist returns list of selected options
             values = request.form.getlist(field_name + "[]")
             if field['required'] and not values:
-                missing_fields.append(field['label'])
+                errors.append(f"{field['label']} is required.")
+            value = ",".join(values) if values else None
         else:
             value = request.form.get(field_name)
             if field['required'] and (value is None or value.strip() == ""):
-                missing_fields.append(field['label'])
+                errors.append(f"{field['label']} is required.")
 
-    if missing_fields:
-        flash(f"Please fill out required fields: {', '.join(missing_fields)}", "warning")
+            # Additional date format and range validation
+            if field['field_type'] == 'date' and value:
+                try:
+                    date_obj = datetime.strptime(value, '%Y-%m-%d').date()
+
+                    # Check if the date is in the future
+                    if date_obj > datetime.today().date():
+                        errors.append(f"{field['label']} cannot be in the future.")
+                except ValueError:
+                    errors.append(f"{field['label']} is not a valid date.")
+                    continue
+
+    if errors:
+        for error in errors:
+            flash(error, "warning")
         form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)[0]
         return render_template('inspection_new.html', form=form, fields=fields)
 
-    # Insert into inspections table
+    # Insert inspection record
     db.execute("""
         INSERT INTO inspections (form_id, inspector_id, location, notes)
         VALUES (?, ?, ?, ?)
     """, form_id, user_id, request.form.get("location"), request.form.get("notes"))
 
-    # Get the inspection ID of the newly inserted inspection
     inspection_id = db.execute("SELECT last_insert_rowid() AS id")[0]["id"]
 
-    # Insert all inspection field values
+    # Insert inspection field values
     for field in fields:
         field_id = field["id"]
         field_name = f"field_{field_id}"
 
         if field['field_type'] == 'checkbox':
-            # Multiple values possible, join as comma-separated string
             values = request.form.getlist(field_name + "[]")
             value_str = ",".join(values) if values else None
         else:
-            # Single value fields
             value_str = request.form.get(field_name)
 
         db.execute("""
@@ -367,8 +385,31 @@ def inspection_new():
             VALUES (?, ?, ?, NULL)
         """, inspection_id, field_id, value_str)
 
-    flash("Inspection submitted successfully!", "success")
+    flash("Inspection submitted successfully.", "success")
     return redirect("/inspection_show")
+
+
+@app.route("/inspection/<int:inspection_id>/delete", methods=["POST"])
+@login_required
+def inspection_delete(inspection_id):
+    # Count inspections with this id (usually 1 or 0)
+    
+    inspections = db.execute("SELECT COUNT(*) AS count FROM inspections WHERE id = ?", inspection_id)[0]["count"]
+    if inspections == 0:
+        flash("Inspection not found.", "danger")
+        return redirect("/inspection_show")
+
+    # Delete related inspection_fields first (if needed)
+    db.execute("DELETE FROM inspection_fields WHERE inspection_id = ?", inspection_id)
+
+    # Delete the inspection itself
+    db.execute("DELETE FROM inspections WHERE id = ?", inspection_id)
+
+    flash("Inspection deleted successfully.", "success")
+    return redirect("/inspection_show")
+
+
+
 
 
 @app.route("/inspection/<int:inspection_id>")
@@ -381,7 +422,3 @@ def inspection_edit(inspection_id):
     # Edit logic
     ...
 
-@app.route("/inspection/<int:inspection_id>/delete", methods=["POST"])
-def inspection_delete(inspection_id):
-    # Delete inspection and redirect
-    ...
