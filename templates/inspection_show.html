@@ -5,42 +5,54 @@
 {% block main %}
 <div class="container mt-4">
     <h2>List of Forms</h2>
-
-<form method="post">
-    <label for="forms.id">Select a form:</label>
-    <select name="forms.id" id="forms.id" required>
-        <option value="">-- Choose a form --</option>
-        {% for form in forms %}
-            <option value="{{ form.id }}" {% if form.id == selected_form_id|int %}selected{% endif %}>
-                {{ form.name }}
-            </option>
-        {% endfor %}
-    </select>
-    <button type="submit">Show Inspections</button>
-</form>
-
-{% if selected_form_id %}
-    <hr>
-    <h3>Your Inspections for this Form:</h3>
-
-    {% if inspections %}
-        <ul>
-        {% for inspection in inspections %}
-            <li>
-                Date: {{ inspection.submitted_at }} |
-                Score: {{ inspection.score }} |
-                Notes: {{ inspection.notes or 'None' }}
-            </li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>You haven't submitted any inspections for this form.</p>
-    {% endif %}
-
-    <form action="/inspection_new" method="get">
-        <input type="hidden" name="forms.id" value="{{ selected_form_id }}">
-        <button type="submit">Add New Inspection</button>
+    <form method="post" class="row g-3 align-items-center mb-4">
+        <div class="col-auto">
+            <label for="form_id" class="col-form-label">Select a form:</label>
+        </div>
+        <div class="col-auto">
+            <select name="form_id" id="form_id" class="form-select" required>
+                <option value="">-- Choose a form --</option>
+                {% for form in forms %}
+                    <option value="{{ form.id }}" {% if form.id == selected_form_id|int %}selected{% endif %}>
+                        {{ form.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-primary" type="submit">Show Inspections</button>
+        </div>
     </form>
-{% endif %}
+
+    {% if selected_form_id %}
+        <hr>
+        <h3>Your Inspections for this Form:</h3>
+
+        {% if inspections %}
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+                {% for inspection in inspections %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">Inspection on {{ inspection.submitted_at }}</h5>
+                            <p class="card-text">
+                                <strong>Score:</strong> {{ inspection.score or 'N/A' }}<br>
+                                <strong>Location:</strong> {{ inspection.location or 'N/A' }}<br>
+                                <strong>Notes:</strong> {{ inspection.notes or 'None' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted mt-3">You haven't submitted any inspections for this form.</p>
+        {% endif %}
+
+        <form action="/inspection_new" method="get" class="mt-4">
+            <input type="hidden" name="form_id" value="{{ selected_form_id }}">
+            <button type="submit" class="btn btn-primary">➕ Add New Inspection</button>
+        </form>
+    {% endif %}
 </div>
 {% endblock %}

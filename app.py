@@ -260,23 +260,65 @@ def delete_form(form_id):
 @login_required
 def inspection_show():
     user_id = session["user_id"]
-    
-    # Get all available forms
-    forms = db.execute("SELECT id, name FROM forms")
-
-    selected_form_id = None
-    inspections = []
 
     if request.method == "POST":
-        selected_form_id = request.form.get("forms.id")
-        if selected_form_id:
-            inspections = db.execute(
-                """SELECT inspections.*, users.username AS created_by_name
-                   FROM inspections
-                   JOIN users ON inspections.inspector_id = users.id
-                   WHERE inspections.form_id = ? AND inspections.inspector_id = ?
-                   ORDER BY inspections.id DESC""",
-                selected_form_id, user_id
-            )
+        selected_form_id = request.form.get("form_id")
+    else:
+        selected_form_id = request.args.get("form_id")
 
-    return render_template("inspection_show.html", forms=forms, selected_form_id=selected_form_id, inspections=inspections)
+    forms = db.execute("SELECT * FROM forms")
+
+    inspections = []
+    if selected_form_id:
+        inspections = db.execute("""
+            SELECT * FROM inspections
+            WHERE form_id = ? AND inspector_id = ?
+            ORDER BY submitted_at DESC
+        """, selected_form_id, user_id)
+
+    return render_template("inspection_show.html", forms=forms,
+        selected_form_id=selected_form_id, inspections=inspections)
+
+
+@app.route('/inspection_new', methods=['GET', 'POST'])
+@login_required
+def inspection_new():
+    form_id = request.args.get('form_id')  # from URL ?form_id=1
+    if not form_id:
+        return redirect("/inspection_show")
+
+    # GET method: show form
+    if request.method == "GET":
+        form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
+        fields = db.execute("""
+            SELECT * FROM form_fields
+            WHERE form_id = ?
+            ORDER BY display_order ASC
+        """, form_id)
+        return render_template('inspection_new.html', form=form[0], fields=fields)
+
+    # POST method: save submitted inspection
+    user_id = session["user_id"]
+    
+    # Insert into inspections table
+    db.execute("""
+        INSERT INTO inspections (form_id, inspector_id, location, notes)
+        VALUES (?, ?, ?, ?)
+    """, form_id, user_id, request.form.get("location"), request.form.get("notes"))
+
+    # Get the inspection ID of the newly inserted inspection
+    inspection_id = db.execute("SELECT last_insert_rowid() AS id")[0]["id"]
+
+    # Now insert all inspection field values
+    field_entries = db.execute("SELECT id FROM form_fields WHERE form_id = ?", form_id)
+
+    for field in field_entries:
+        field_id = field["id"]
+        value = request.form.get(f"field_{field_id}")
+        comment = request.form.get(f"comment_{field_id}")
+        db.execute("""
+            INSERT INTO inspection_fields (inspection_id, field_id, value, comment)
+            VALUES (?, ?, ?, ?)
+        """, inspection_id, field_id, value, comment)
+
+    return redirect("/inspection_show")

@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+
+{% block title %}New Inspection{% endblock %}
+
+{% block main %}
+<h2>New Inspection - {{ form.name }}</h2>
+<p>{{ form.description }}</p>
+
+<form method="post">
+
+    {% for field in fields %}
+        <div style="margin-bottom: 20px;">
+            <label><strong>{{ field.label }}</strong>{% if field.required %} *{% endif %}</label><br>
+
+            {% if field.field_type == 'text' %}
+                <input type="text" name="field_{{ field.id }}" class="form-control" required="{{ field.required }}">
+            
+            {% elif field.field_type == 'textarea' %}
+                <textarea name="field_{{ field.id }}" class="form-control" rows="3" required="{{ field.required }}"></textarea>
+            
+            {% elif field.field_type == 'select' and field.options %}
+                <select name="field_{{ field.id }}" class="form-control" required="{{ field.required }}">
+                    <option value="">-- Select --</option>
+                    {% for option in field.options.split(',') %}
+                        <option value="{{ option|trim }}">{{ option|trim }}</option>
+                    {% endfor %}
+                </select>
+            
+            {% endif %}
+
+            <label for="comment_{{ field.id }}">Comment (optional):</label><br>
+            <input type="text" name="comment_{{ field.id }}" class="form-control">
+        </div>
+        <hr>
+    {% endfor %}
+
+    <div>
+        <label><strong>Location:</strong></label><br>
+        <input type="text" name="location" class="form-control">
+    </div>
+
+    <div style="margin-top: 10px;">
+        <label><strong>Notes:</strong></label><br>
+        <textarea name="notes" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <button type="submit" class="btn btn-primary">Submit Inspection</button>
+    </div>
+
+</form>
+{% endblock %}
