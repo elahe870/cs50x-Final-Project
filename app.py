@@ -277,25 +277,36 @@ def delete_form(form_id):
 @login_required
 def inspection_show():
     user_id = session["user_id"]
+    forms = db.execute("SELECT * FROM forms")
+
+    selected_form_id = None
+    inspections = []
 
     if request.method == "POST":
         selected_form_id = request.form.get("form_id")
-    else:
-        selected_form_id = request.args.get("form_id")
 
-    forms = db.execute("SELECT * FROM forms")
+        if selected_form_id:
+            inspections_raw = db.execute("""
+                SELECT * FROM inspections
+                WHERE inspector_id = ? AND form_id = ?
+                ORDER BY submitted_at DESC
+            """, user_id, selected_form_id)
 
-    inspections = []
-    if selected_form_id:
-        inspections = db.execute("""
-            SELECT * FROM inspections
-            WHERE form_id = ? AND inspector_id = ?
-            ORDER BY submitted_at DESC
-        """, selected_form_id, user_id)
+            # برای هر inspection، سه فیلد اول را بر اساس display_order واکشی کن
+            for inspection in inspections_raw:
+                fields = db.execute("""
+                    SELECT ff.label, ifs.value
+                    FROM inspection_fields AS ifs
+                    JOIN form_fields AS ff ON ifs.field_id = ff.id
+                    WHERE ifs.inspection_id = ?
+                    ORDER BY ff.display_order
+                    LIMIT 3
+                """, inspection["id"])
 
-    return render_template("inspection_show.html", forms=forms,
-        selected_form_id=selected_form_id, inspections=inspections)
+                inspection["fields"] = fields
+                inspections.append(inspection)
 
+    return render_template("inspection_show.html", forms=forms, inspections=inspections, selected_form_id=selected_form_id)
 
 
 from datetime import datetime
@@ -324,31 +335,34 @@ def inspection_new():
 
     # POST method: save submitted inspection
     user_id = session["user_id"]
-
-    # Fetch fields to validate required inputs and date validation
     fields = db.execute("SELECT * FROM form_fields WHERE form_id = ?", form_id)
 
     errors = []
+    valid_count = 0
+    total_count = len(fields)
+
     for field in fields:
         field_name = f"field_{field['id']}"
         value = None
 
         if field['field_type'] == 'checkbox':
             values = request.form.getlist(field_name + "[]")
+            value = ",".join(values) if values else None
             if field['required'] and not values:
                 errors.append(f"{field['label']} is required.")
-            value = ",".join(values) if values else None
+            elif values:
+                valid_count += 1
         else:
             value = request.form.get(field_name)
             if field['required'] and (value is None or value.strip() == ""):
                 errors.append(f"{field['label']} is required.")
+            elif value and value.strip():
+                valid_count += 1
 
             # Additional date format and range validation
             if field['field_type'] == 'date' and value:
                 try:
                     date_obj = datetime.strptime(value, '%Y-%m-%d').date()
-
-                    # Check if the date is in the future
                     if date_obj > datetime.today().date():
                         errors.append(f"{field['label']} cannot be in the future.")
                 except ValueError:
@@ -361,11 +375,14 @@ def inspection_new():
         form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)[0]
         return render_template('inspection_new.html', form=form, fields=fields)
 
+    # Calculate score
+    score = round((valid_count / total_count) * 100, 2) if total_count > 0 else 0
+
     # Insert inspection record
     db.execute("""
-        INSERT INTO inspections (form_id, inspector_id, location, notes)
-        VALUES (?, ?, ?, ?)
-    """, form_id, user_id, request.form.get("location"), request.form.get("notes"))
+        INSERT INTO inspections (form_id, inspector_id, location, notes, score)
+        VALUES (?, ?, ?, ?, ?)
+    """, form_id, user_id, request.form.get("location"), request.form.get("notes"), score)
 
     inspection_id = db.execute("SELECT last_insert_rowid() AS id")[0]["id"]
 
@@ -385,7 +402,7 @@ def inspection_new():
             VALUES (?, ?, ?, NULL)
         """, inspection_id, field_id, value_str)
 
-    flash("Inspection submitted successfully.", "success")
+    flash(f"Inspection submitted successfully. Score: {score}%", "success")
     return redirect("/inspection_show")
 
 

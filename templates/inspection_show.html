@@ -41,14 +41,22 @@
                                 <strong>Notes:</strong> {{ inspection.notes or 'None' }}
                             </p>
 
+                            {% if inspection.fields %}
+                                
+                                <div class="mb-2">
+                                    <hr>
+                                    <ul class="mb-0 ps-3">
+                                        {% for field in inspection.fields %}
+                                            
+                                            <p class="mb-1"><strong>{{ field.label }}:</strong> {{ field.value or '—' }}</p>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+
                             <div class="d-flex justify-content-between mt-3">
-                                <!-- Preview -->
                                 <a href="/inspection/{{ inspection.id }}" class="btn btn-outline-info btn-sm">🔍 Preview</a>
-
-                                <!-- Edit -->
                                 <a href="/inspection/{{ inspection.id }}/edit" class="btn btn-outline-secondary btn-sm">✏️ Edit</a>
-
-                                <!-- Delete -->
                                 <form action="/inspection/{{ inspection.id }}/delete" method="post" onsubmit="return confirm('Are you sure you want to delete this inspection?');">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Delete</button>
                                 </form>
