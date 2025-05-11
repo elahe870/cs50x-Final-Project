@@ -616,3 +616,50 @@ def inspection_edit(inspection_id):
         return redirect(f"/inspection/{inspection_id}")
 
     return render_template("inspection_edit.html", form=form, fields=fields, inspection=inspection, images=images)
+
+from datetime import datetime
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    user_id = session["user_id"]
+
+    # 1. Total inspections by user
+    total_inspections = db.execute(""" 
+        SELECT COUNT(*) AS count FROM inspections WHERE inspector_id = ? 
+    """, user_id)[0]["count"]
+    
+    # 2. Inspections this month
+    current_month = datetime.now().strftime("%Y-%m")
+    inspections_this_month = db.execute("""
+        SELECT COUNT(*) AS count FROM inspections 
+        WHERE strftime('%Y-%m', submitted_at) = ?
+    """, (current_month,))[0]["count"]
+
+    # 3. Inspections with deviations (score < 100)
+    deviations = db.execute("""
+        SELECT COUNT(*) AS count FROM inspections 
+        WHERE inspector_id = ? AND score < 100
+    """, user_id)[0]["count"]
+
+    # 4. Recent 5 inspections
+    recent_inspections = db.execute("""
+        SELECT i.id, f.name AS form_name, i.submitted_at, i.location, i.score 
+        FROM inspections i 
+        JOIN forms f ON i.form_id = f.id 
+        WHERE i.inspector_id = ? 
+        ORDER BY i.submitted_at DESC 
+        LIMIT 5
+    """, user_id)
+
+    # 5. Average score (optional)
+    avg_score = db.execute("""
+        SELECT ROUND(AVG(score), 2) AS avg FROM inspections WHERE inspector_id = ?
+    """, user_id)[0]["avg"] or 0
+
+    return render_template("dashboard.html",
+                           total=total_inspections,
+                           this_month=inspections_this_month,
+                           deviations=deviations,
+                           recent=recent_inspections,
+                           avg_score=avg_score)
