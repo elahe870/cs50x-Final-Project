@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block title %}Inspection Details{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+    <h2>Inspection Details</h2>
+    <p class="text-muted">Form: <strong>{{ inspection.form_name }}</strong></p>
+
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <p><strong>Submitted at:</strong> {{ inspection.submitted_at }}</p>
+            <p><strong>Inspector:</strong> {{ inspection.inspector_name }}</p>
+            <p><strong>Score:</strong> {{ inspection.score or 'N/A' }}%</p>
+            <p><strong>Location:</strong> {{ inspection.location or 'N/A' }}</p>
+            <p><strong>Notes:</strong> {{ inspection.notes or '—' }}</p>
+        </div>
+    </div>
+
+    <h5 class="mt-4">Field Responses</h5>
+    <ul class="list-group mb-4">
+        {% for field in fields %}
+            <li class="list-group-item">
+                <strong>{{ field.label }}:</strong> {{ field.value or '—' }}
+            </li>
+        {% endfor %}
+    </ul>
+    {% if images %}
+        <h5 class="mt-4 text-center">Attached Photos</h5>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+        {% for image in images %}
+            <div class="card border-0 shadow-sm" style="width: 18rem;">
+                <img src="{{ url_for('static', filename='inspection_photos/' ~ image.filename) }}"
+                class="card-img-top img-fluid"
+                style="max-height: 250px; object-fit: contain;"
+                alt="Inspection photo">
+            </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <p class="text-muted text-center">No photos attached to this inspection.</p>
+    {% endif %}
+
+
+    <div class="mt-4">
+        <a href="/inspection_show" class="btn btn-secondary">⬅ Back to Inspections</a>
+    </div>
+</div>
+{% endblock %}

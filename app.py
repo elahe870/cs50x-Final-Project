@@ -310,16 +310,19 @@ def inspection_show():
 
 
 from datetime import datetime
+import os
+import base64
+from werkzeug.utils import secure_filename
+from flask import current_app
 
 @app.route('/inspection_new', methods=['GET', 'POST'])
 @login_required
 def inspection_new():
-    form_id = request.args.get('form_id')  # from URL ?form_id=1
+    form_id = request.args.get('form_id')
     if not form_id:
         flash("Form ID missing.", "danger")
         return redirect("/inspection_show")
 
-    # GET method: show form
     if request.method == "GET":
         form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
         if not form:
@@ -333,7 +336,6 @@ def inspection_new():
         """, form_id)
         return render_template('inspection_new.html', form=form[0], fields=fields)
 
-    # POST method: save submitted inspection
     user_id = session["user_id"]
     fields = db.execute("SELECT * FROM form_fields WHERE form_id = ?", form_id)
 
@@ -359,7 +361,6 @@ def inspection_new():
             elif value and value.strip():
                 valid_count += 1
 
-            # Additional date format and range validation
             if field['field_type'] == 'date' and value:
                 try:
                     date_obj = datetime.strptime(value, '%Y-%m-%d').date()
@@ -375,10 +376,8 @@ def inspection_new():
         form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)[0]
         return render_template('inspection_new.html', form=form, fields=fields)
 
-    # Calculate score
     score = round((valid_count / total_count) * 100, 2) if total_count > 0 else 0
 
-    # Insert inspection record
     db.execute("""
         INSERT INTO inspections (form_id, inspector_id, location, notes, score)
         VALUES (?, ?, ?, ?, ?)
@@ -386,7 +385,6 @@ def inspection_new():
 
     inspection_id = db.execute("SELECT last_insert_rowid() AS id")[0]["id"]
 
-    # Insert inspection field values
     for field in fields:
         field_id = field["id"]
         field_name = f"field_{field_id}"
@@ -402,40 +400,230 @@ def inspection_new():
             VALUES (?, ?, ?, NULL)
         """, inspection_id, field_id, value_str)
 
+    # === Handle image uploads ===
+    image_folder = os.path.join("static", "inspection_photos")
+    os.makedirs(image_folder, exist_ok=True)
+
+    # 1. Uploaded file
+    photo_file = request.files.get("photo_upload")
+    if photo_file and photo_file.filename:
+        filename = secure_filename(photo_file.filename)
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        full_filename = f"{timestamp}_{filename}"
+        path = os.path.join(image_folder, full_filename)
+        photo_file.save(path)
+
+        db.execute("""
+            INSERT INTO inspection_images (inspection_id, filename)
+            VALUES (?, ?)
+        """, inspection_id, full_filename)
+
+    # 2. Captured base64 image
+    captured_data = request.form.get("captured_photo")
+    if captured_data and captured_data.startswith("data:image/"):
+        try:
+            header, encoded = captured_data.split(",", 1)
+            image_data = base64.b64decode(encoded)
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            full_filename = f"{timestamp}_captured.png"
+            path = os.path.join(image_folder, full_filename)
+
+            with open(path, "wb") as f:
+                f.write(image_data)
+
+            db.execute("""
+                INSERT INTO inspection_images (inspection_id, filename)
+                VALUES (?, ?)
+            """, inspection_id, full_filename)
+        except Exception as e:
+            flash("Failed to save captured photo.", "warning")
+
     flash(f"Inspection submitted successfully. Score: {score}%", "success")
     return redirect("/inspection_show")
-
 
 @app.route("/inspection/<int:inspection_id>/delete", methods=["POST"])
 @login_required
 def inspection_delete(inspection_id):
-    # Count inspections with this id (usually 1 or 0)
-    
-    inspections = db.execute("SELECT COUNT(*) AS count FROM inspections WHERE id = ?", inspection_id)[0]["count"]
-    if inspections == 0:
-        flash("Inspection not found.", "danger")
+    try:
+        # Check if inspection exists
+        inspection = db.execute("SELECT 1 FROM inspections WHERE id = ?", inspection_id)
+        if not inspection:
+            flash("Inspection not found.", "danger")
+            return redirect("/inspection_show")
+
+        # Delete related inspection_fields
+        db.execute("DELETE FROM inspection_fields WHERE inspection_id = ?", inspection_id)
+        # Delete related inspection_images
+        db.execute("DELETE FROM inspection_images WHERE inspection_id = ?", inspection_id)
+        # Finally, delete the inspection itself
+        db.execute("DELETE FROM inspections WHERE id = ?", inspection_id)
+
+        flash("Inspection and all related records deleted successfully.", "success")
         return redirect("/inspection_show")
 
-    # Delete related inspection_fields first (if needed)
-    db.execute("DELETE FROM inspection_fields WHERE inspection_id = ?", inspection_id)
-
-    # Delete the inspection itself
-    db.execute("DELETE FROM inspections WHERE id = ?", inspection_id)
-
-    flash("Inspection deleted successfully.", "success")
-    return redirect("/inspection_show")
-
-
-
+    except Exception as e:
+        flash(f"Error deleting inspection: {str(e)}", "danger")
+        return redirect("/inspection_show")
 
 
 @app.route("/inspection/<int:inspection_id>")
+@login_required
 def inspection_preview(inspection_id):
-    # Show details (read-only)
-    ...
+    # Get inspection main details
+    inspection = db.execute("""
+        SELECT i.*, f.name AS form_name, u.username AS inspector_name
+        FROM inspections i
+        JOIN forms f ON i.form_id = f.id
+        JOIN users u ON i.inspector_id = u.id
+        WHERE i.id = ?
+    """, inspection_id)
+    if not inspection:
+        flash("Inspection not found.", "danger")
+        return redirect("/inspection_show")
 
-@app.route("/inspection/<int:inspection_id>/edit", methods=["GET", "POST"])
+    inspection = inspection[0]
+
+    # Get inspection field values
+    fields = db.execute("""
+        SELECT ff.label, ff.field_type, ifs.value
+        FROM inspection_fields ifs
+        JOIN form_fields ff ON ifs.field_id = ff.id
+        WHERE ifs.inspection_id = ?
+        ORDER BY ff.display_order ASC
+    """, inspection_id)
+
+    # Get attached images
+    images = db.execute("""
+        SELECT filename FROM inspection_images
+        WHERE inspection_id = ?
+    """, inspection_id)
+
+    return render_template("inspection_preview.html", inspection=inspection, fields=fields, images=images)
+
+
+import os
+print(os.getcwd())  # This will print the current working directory
+
+@app.route('/inspection/<int:inspection_id>/edit', methods=['GET', 'POST'])
+@login_required
 def inspection_edit(inspection_id):
-    # Edit logic
-    ...
+    # Get inspection data
+    inspection = db.execute("SELECT * FROM inspections WHERE id = ?", inspection_id)
+    if not inspection:
+        flash("Inspection not found.", "danger")
+        return redirect("/inspection_show")
+    inspection = inspection[0]
+
+    # Get form and fields
+    form = db.execute("SELECT * FROM forms WHERE id = ?", inspection["form_id"])[0]
+    fields = db.execute("""
+        SELECT f.*, i.value
+        FROM form_fields f
+        LEFT JOIN inspection_fields i ON i.field_id = f.id AND i.inspection_id = ?
+        WHERE f.form_id = ?
+        ORDER BY f.display_order ASC
+    """, inspection_id, form["id"])
+
+    # Get existing images
+    images = db.execute("""
+        SELECT * FROM inspection_images
+        WHERE inspection_id = ?
+    """, inspection_id)
+
+    if request.method == "POST":
+        location = request.form.get("location")
+        notes = request.form.get("notes")
+
+        db.execute("""
+            UPDATE inspections SET location = ?, notes = ? WHERE id = ?
+        """, location, notes, inspection_id)
+
+        valid_count = 0
+        total_count = len(fields)
+        errors = []
+
+        for field in fields:
+            field_id = field["id"]
+            field_name = f"field_{field_id}"
+            value_str = None
+
+            if field["field_type"] == "checkbox":
+                values = request.form.getlist(field_name + "[]")
+                value_str = ",".join(values) if values else None
+                if field['required'] and not values:
+                    errors.append(f"{field['label']} is required.")
+                elif values:
+                    valid_count += 1
+            else:
+                value = request.form.get(field_name)
+                if field['required'] and not value:
+                    errors.append(f"{field['label']} is required.")
+                elif value:
+                    valid_count += 1
+                value_str = value
+
+            if field['field_type'] == 'date' and value_str:
+                try:
+                    date_obj = datetime.strptime(value_str, '%Y-%m-%d').date()
+                    if date_obj > datetime.today().date():
+                        errors.append(f"{field['label']} cannot be in the future.")
+                except ValueError:
+                    errors.append(f"{field['label']} is not a valid date.")
+
+            db.execute("""
+                UPDATE inspection_fields SET value = ?
+                WHERE inspection_id = ? AND field_id = ?
+            """, value_str, inspection_id, field_id)
+
+        if errors:
+            for error in errors:
+                flash(error, "warning")
+            return render_template("inspection_edit.html", form=form, fields=fields, inspection=inspection, images=images)
+
+        score = round((valid_count / total_count) * 100, 2)
+        db.execute("UPDATE inspections SET score = ? WHERE id = ?", score, inspection_id)
+
+        # === Handle photo replacement ===
+        image_folder = os.path.join("static", "inspection_photos")
+        os.makedirs(image_folder, exist_ok=True)
+
+        # 1. New file upload
+        uploaded_file = request.files.get("photo_upload")
+        if uploaded_file and uploaded_file.filename:
+            filename = secure_filename(uploaded_file.filename)
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            full_filename = f"{timestamp}_{filename}"
+            path = os.path.join(image_folder, full_filename)
+            uploaded_file.save(path)
+
+            db.execute("""
+                INSERT INTO inspection_images (inspection_id, filename)
+                VALUES (?, ?)
+            """, inspection_id, full_filename)
+
+        # 2. Captured photo from webcam
+        captured_data = request.form.get("captured_photo")
+        if captured_data and captured_data.startswith("data:image/"):
+            try:
+                header, encoded = captured_data.split(",", 1)
+                image_data = base64.b64decode(encoded)
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                full_filename = f"{timestamp}_captured.png"
+                path = os.path.join(image_folder, full_filename)
+
+                with open(path, "wb") as f:
+                    f.write(image_data)
+
+                db.execute("""
+                    INSERT INTO inspection_images (inspection_id, filename)
+                    VALUES (?, ?)
+                """, inspection_id, full_filename)
+            except Exception:
+                flash("Failed to save captured photo.", "warning")
+
+        flash("Inspection updated successfully.", "success")
+        return redirect(f"/inspection/{inspection_id}")
+
+    return render_template("inspection_edit.html", form=form, fields=fields, inspection=inspection, images=images)
+
 

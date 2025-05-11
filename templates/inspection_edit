@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit Inspection{% endblock %}
+
+{% block main %}
+<h2>Edit Inspection - {{ form.name }}</h2>
+<p>{{ form.description }}</p>
+
+<form method="post" enctype="multipart/form-data">
+    {% for field in fields %}
+        <div class="mb-3">
+            <label><strong>{{ field.label }}</strong>{% if field.required %} *{% endif %}</label><br>
+
+            {% if field.field_type == 'text' %}
+                <input type="text" name="field_{{ field.id }}" class="form-control" value="{{ field.value }}">
+
+            {% elif field.field_type == 'textarea' %}
+                <textarea name="field_{{ field.id }}" class="form-control">{{ field.value }}</textarea>
+
+            {% elif field.field_type == 'select' and field.options %}
+                <select name="field_{{ field.id }}" class="form-control">
+                    <option value="">-- Select --</option>
+                    {% for option in field.options.split(',') %}
+                        <option value="{{ option|trim }}" {% if field.value == option|trim %}selected{% endif %}>
+                            {{ option|trim }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+            {% elif field.field_type == 'radio' and field.options %}
+                {% for option in field.options.split(',') %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="field_{{ field.id }}"
+                            value="{{ option|trim }}" {% if field.value == option|trim %}checked{% endif %}>
+                        <label class="form-check-label">{{ option|trim }}</label>
+                    </div>
+                {% endfor %}
+
+            {% elif field.field_type == 'checkbox' and field.options %}
+                {% set values = field.value.split(',') if field.value else [] %}
+                {% for option in field.options.split(',') %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="field_{{ field.id }}[]"
+                               value="{{ option|trim }}" {% if option|trim in values %}checked{% endif %}>
+                        <label class="form-check-label">{{ option|trim }}</label>
+                    </div>
+                {% endfor %}
+
+            {% elif field.field_type == 'number' %}
+                <input type="number" name="field_{{ field.id }}" class="form-control" value="{{ field.value }}">
+
+            {% elif field.field_type == 'date' %}
+                <input type="date" name="field_{{ field.id }}" class="form-control" value="{{ field.value }}">
+            {% endif %}
+        </div>
+        <hr>
+    {% endfor %}
+
+    <div class="mb-3">
+        <label><strong>Location:</strong></label>
+        <input type="text" name="location" class="form-control" value="{{ inspection.location }}">
+    </div>
+
+    <div class="mb-3">
+        <label><strong>Notes:</strong></label>
+        <textarea name="notes" class="form-control">{{ inspection.notes }}</textarea>
+    </div>
+
+    <hr>
+
+    <!-- Existing images -->
+    {% if images %}
+        <h5 class="mb-3">Attached Photos</h5>
+        <div class="d-flex flex-wrap gap-3 mb-4">
+            {% for image in images %}
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='inspection_photos/' ~ image.filename) }}"
+                         alt="Photo" style="max-height: 150px;" class="rounded border">
+                    <p class="small text-muted mt-1">{{ image.filename }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Upload or capture new photo -->
+    <div class="mb-3">
+        <label for="photo_upload" class="form-label"><strong>Upload Photo</strong></label>
+        <input type="file" name="photo_upload" accept="image/*" class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label"><strong>Take Photo with Camera</strong></label><br>
+        <video id="camera" width="300" height="200" autoplay class="border mb-2"></video><br>
+        <button type="button" onclick="capturePhoto()" class="btn btn-outline-secondary btn-sm">📸 Capture</button><br>
+        <canvas id="snapshot" width="300" height="200" class="d-none mt-2 border"></canvas>
+        <input type="hidden" name="captured_photo" id="captured_photo">
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-3">💾 Save Changes</button>
+</form>
+
+<script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('snapshot');
+    const hiddenInput = document.getElementById('captured_photo');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => video.srcObject = stream)
+        .catch(error => console.error("Camera error:", error));
+
+    function capturePhoto() {
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.classList.remove("d-none");
+        hiddenInput.value = canvas.toDataURL('image/png');
+    }
+</script>
+{% endblock %}

@@ -20,7 +20,7 @@
   {% endif %}
 {% endwith %}
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     {% for field in fields %}
         <div style="margin-bottom: 20px;">
             <label><strong>{{ field.label }}</strong>{% if field.required %} *{% endif %}</label><br>
@@ -92,8 +92,49 @@
         <textarea name="notes" class="form-control" rows="3">{{ submitted_data.get('notes', '') if submitted_data else '' }}</textarea>
     </div>
 
+    <hr>
+
+    <!-- 📤 Upload from file -->
+    <div class="mb-3">
+        <label for="photo_upload" class="form-label"><strong>Upload Photo</strong></label>
+        <input type="file" name="photo_upload" accept="image/*" class="form-control">
+    </div>
+
+    <!-- 📷 Capture from camera -->
+    <div class="mb-3">
+        <label class="form-label"><strong>Take Photo with Camera</strong></label><br>
+        <video id="camera" width="300" height="200" autoplay class="border mb-2"></video><br>
+        <button type="button" onclick="capturePhoto()" class="btn btn-outline-secondary btn-sm">📸 Capture</button><br>
+        <canvas id="snapshot" width="300" height="200" class="d-none mt-2 border rounded"></canvas>
+        <input type="hidden" name="captured_photo" id="captured_photo">
+    </div>
+
     <div style="margin-top: 20px;">
         <button type="submit" class="btn btn-primary">Submit Inspection</button>
     </div>
 </form>
+
+<!-- JavaScript for camera -->
+<script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('snapshot');
+    const hiddenInput = document.getElementById('captured_photo');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(error => {
+            console.error("Camera not accessible:", error);
+            alert("⚠️ Unable to access the camera. Please use file upload instead.");
+        });
+
+    function capturePhoto() {
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        hiddenInput.value = dataUrl;
+        canvas.classList.remove('d-none');
+    }
+</script>
 {% endblock %}
