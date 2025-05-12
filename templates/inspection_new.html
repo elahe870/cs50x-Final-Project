@@ -20,98 +20,100 @@
   {% endif %}
 {% endwith %}
 
-<form method="post" enctype="multipart/form-data">
-    {% for field in fields %}
-        <div style="margin-bottom: 20px;">
-            <label><strong>{{ field.label }}</strong>{% if field.required %} *{% endif %}</label><br>
+<form method="POST" enctype="multipart/form-data">
+    
 
-            {% set val = submitted_data.get('field_' ~ field.id|string) if submitted_data else '' %}
+    {% for field in fields %}
+        <div class="form-group mb-3">
+            <label for="field_{{ field.id }}"><strong>{{ field.label }}</strong>{% if field.required %} *{% endif %}</label>
 
             {% if field.field_type == 'text' %}
-                <input type="text" name="field_{{ field.id }}" class="form-control"
-                       value="{{ val }}" {% if field.required %}required{% endif %}>
+                <input type="text" class="form-control" id="field_{{ field.id }}" name="field_{{ field.id }}" value="{{ field.value or '' }}">
 
             {% elif field.field_type == 'textarea' %}
-                <textarea name="field_{{ field.id }}" class="form-control" rows="3"
-                          {% if field.required %}required{% endif %}>{{ val }}</textarea>
-
-            {% elif field.field_type == 'select' and field.options %}
-                <select name="field_{{ field.id }}" class="form-control" {% if field.required %}required{% endif %}>
-                    <option value="">-- Select --</option>
-                    {% for option in field.options.split(',') %}
-                        <option value="{{ option|trim }}" {% if val == option|trim %}selected{% endif %}>{{ option|trim }}</option>
-                    {% endfor %}
-                </select>
-
-            {% elif field.field_type == 'date' %}
-                <input type="date" name="field_{{ field.id }}" class="form-control"
-                       value="{{ val }}" {% if field.required %}required{% endif %}>
+                <textarea class="form-control" id="field_{{ field.id }}" name="field_{{ field.id }}">{{ field.value or '' }}</textarea>
 
             {% elif field.field_type == 'number' %}
-                <input type="number" name="field_{{ field.id }}" class="form-control"
-                       value="{{ val }}" {% if field.required %}required{% endif %}>
+                <input type="number" class="form-control" id="field_{{ field.id }}" name="field_{{ field.id }}" value="{{ field.value or '' }}">
 
-            {% elif field.field_type == 'radio' and field.options %}
+            {% elif field.field_type == 'date' %}
+                <input type="date" class="form-control" id="field_{{ field.id }}" name="field_{{ field.id }}" value="{{ field.value or '' }}">
+
+            {% elif field.field_type == 'radio' %}
                 {% for option in field.options.split(',') %}
                     <div class="form-check">
-                        <input class="form-check-input" type="radio"
-                               name="field_{{ field.id }}"
-                               id="field_{{ field.id }}_{{ loop.index0 }}"
-                               value="{{ option|trim }}"
-                               {% if val == option|trim %}checked{% endif %}
-                               {% if field.required %}required{% endif %}>
-                        <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index0 }}">{{ option|trim }}</label>
+                        <input class="form-check-input" type="radio" name="field_{{ field.id }}" id="field_{{ field.id }}_{{ loop.index }}" value="{{ option.strip() }}" {% if field.value == option.strip() %}checked{% endif %}>
+                        <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index }}">{{ option.strip() }}</label>
                     </div>
                 {% endfor %}
 
-            {% elif field.field_type == 'checkbox' and field.options %}
-                {% set selected_values = submitted_data.getlist('field_' ~ field.id ~ '[]') if submitted_data else [] %}
+            {% elif field.field_type == 'checkbox' %}
+                {% set selected = field.value.split(',') if field.value else [] %}
                 {% for option in field.options.split(',') %}
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox"
-                               name="field_{{ field.id }}[]"
-                               id="field_{{ field.id }}_{{ loop.index0 }}"
-                               value="{{ option|trim }}"
-                               {% if option|trim in selected_values %}checked{% endif %}>
-                        <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index0 }}">{{ option|trim }}</label>
+                        <input class="form-check-input" type="checkbox" name="field_{{ field.id }}" id="field_{{ field.id }}_{{ loop.index }}" value="{{ option.strip() }}" {% if option.strip() in selected %}checked{% endif %}>
+                        <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index }}">{{ option.strip() }}</label>
                     </div>
                 {% endfor %}
+
+            {% elif field.field_type == 'select' %}
+                <select class="form-control" name="field_{{ field.id }}" id="field_{{ field.id }}">
+                    <option value="">-- Select --</option>
+                    {% for option in field.options.split(',') %}
+                        <option value="{{ option.strip() }}" {% if option.strip() == field.value %}selected{% endif %}>{{ option.strip() }}</option>
+                    {% endfor %}
+                </select>
             {% endif %}
         </div>
-        <hr>
     {% endfor %}
 
-    <div>
-        <label><strong>Location:</strong></label><br>
-        <input type="text" name="location" class="form-control"
-               value="{{ submitted_data.get('location', '') if submitted_data else '' }}">
+    <!-- Location and notes -->
+    <div class="form-group mb-3">
+        <label for="location"><strong>Location</strong></label>
+        <input type="text" class="form-control" name="location" id="location" value="{{ inspection.location or '' }}">
     </div>
 
-    <div style="margin-top: 10px;">
-        <label><strong>Notes:</strong></label><br>
-        <textarea name="notes" class="form-control" rows="3">{{ submitted_data.get('notes', '') if submitted_data else '' }}</textarea>
+    <div class="form-group mb-3">
+        <label for="notes"><strong>Notes</strong></label>
+        <textarea class="form-control" name="notes" id="notes">{{ inspection.notes or '' }}</textarea>
     </div>
 
-    <hr>
-
-    <!-- 📤 Upload from file -->
-    <div class="mb-3">
-        <label for="photo_upload" class="form-label"><strong>Upload Photo</strong></label>
-        <input type="file" name="photo_upload" accept="image/*" class="form-control">
+    <!-- Upload image -->
+    <div class="form-group mb-3">
+        <label for="photo_upload"><strong>Upload Photo</strong></label>
+        <input type="file" class="form-control" name="photo_upload" id="photo_upload" accept="image/*">
     </div>
 
-    <!-- 📷 Capture from camera -->
-    <div class="mb-3">
-        <label class="form-label"><strong>Take Photo with Camera</strong></label><br>
-        <video id="camera" width="300" height="200" autoplay class="border mb-2"></video><br>
-        <button type="button" onclick="capturePhoto()" class="btn btn-outline-secondary btn-sm">📸 Capture</button><br>
-        <canvas id="snapshot" width="300" height="200" class="d-none mt-2 border rounded"></canvas>
+    <!-- Webcam capture -->
+    <div class="form-group mb-3">
+        <label><strong>Capture Photo via Webcam</strong></label>
+        <div>
+            <video id="camera" width="320" height="240" autoplay style="border:1px solid #ccc;"></video>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="capturePhoto()">Capture Photo</button>
+        </div>
+        <canvas id="snapshot" width="320" height="240" class="d-none mt-2"></canvas>
         <input type="hidden" name="captured_photo" id="captured_photo">
     </div>
 
-    <div style="margin-top: 20px;">
-        <button type="submit" class="btn btn-primary">Submit Inspection</button>
+    <!-- Show existing images with delete buttons -->
+    <div class="mb-3">
+        <label><strong>Existing Photos:</strong></label>
+        <div class="d-flex flex-wrap">
+            {% for image in images %}
+                <div class="me-3 mb-3 text-center">
+                    <img src="{{ url_for('static', filename='inspection_photos/' ~ image.filename) }}" alt="Photo" width="150" class="img-thumbnail">
+                    <form method="POST" onsubmit="return confirm('Are you sure you want to delete this photo?');">
+                        
+                        <input type="hidden" name="delete_image_id" value="{{ image.id }}">
+                        <button type="submit" class="btn btn-sm btn-danger mt-1">Delete</button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
     </div>
+
+    <!-- Submit button -->
+    <button type="submit" class="btn btn-primary">Save Changes</button>
 </form>
 
 <!-- JavaScript for camera -->
