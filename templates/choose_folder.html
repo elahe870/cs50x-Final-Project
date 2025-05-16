@@ -1,7 +1,70 @@
-<h2>Save Inspection as PDF</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Save PDF</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f8f8f8;
+      margin: 0;
+    }
 
-<form action="{{ url_for('generate_pdf', inspection_id=inspection.id) }}" method="post">
-  <label for="folder">Enter folder name to save the PDF:</label>
-  <input type="text" name="folder" id="folder" required>
-  <button type="submit">Generate PDF</button>
-</form>
+    .pdf-form-container {
+      background-color: #fff;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    label, input, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+      font-size: 1rem;
+    }
+
+    input {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pdf-form-container">
+    <h2>Save Inspection as PDF</h2>
+    <form action="{{ url_for('generate_pdf', inspection_id=inspection.id) }}" method="post">
+      <label for="folder">Enter folder name to save the PDF:</label>
+      <input type="text" name="folder" id="folder" required>
+      <button type="submit">Generate PDF</button>
+    </form>
+  </div>
+
+</body>
+</html>
