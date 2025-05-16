@@ -74,7 +74,7 @@ def login():
         session["user_id"] = rows[0]["id"]
 
         # Redirect user to home page
-        return redirect("/")
+        return redirect("/dashboard")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -731,3 +731,29 @@ def choose_folder(inspection_id):
 @login_required
 def redirect_to_choose_folder(inspection_id):
     return redirect(url_for("choose_folder", inspection_id=inspection_id))
+
+
+@app.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    if request.method == "POST":
+        current_password = request.form.get("current_password")
+        new_password = request.form.get("new_password")
+        confirm_password = request.form.get("confirm_password")
+
+        user = db.execute("SELECT * FROM users WHERE id = ?", session["user_id"])[0]
+
+        if not check_password_hash(user["hash"], current_password):
+            flash("Current password is incorrect.", "danger")
+            return redirect(url_for("profile"))
+
+        if new_password != confirm_password:
+            flash("New passwords do not match.", "warning")
+            return redirect(url_for("profile"))
+
+        new_hash = generate_password_hash(new_password)
+        db.execute("UPDATE users SET hash = ? WHERE id = ?", new_hash, session["user_id"])
+        flash("Password changed successfully.", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template("profile.html")
