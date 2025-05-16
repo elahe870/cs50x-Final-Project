@@ -520,137 +520,78 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 import os, base64
 
-@app.route('/inspection/<int:inspection_id>/edit', methods=['GET', 'POST'])
+@app.route("/inspection/<int:inspection_id>/edit", methods=["GET", "POST"])
 @login_required
 def inspection_edit(inspection_id):
-    inspection_result = db.execute("SELECT * FROM inspections WHERE id = ?", inspection_id)
-    if not inspection_result:
-        flash("Inspection not found.", "danger")
-        return redirect("/inspection_show")
-    inspection = inspection_result[0]
+    inspection = db.execute("SELECT * FROM inspections WHERE id = ? AND inspector_id = ?", inspection_id, session["user_id"])[0]
+    form = db.execute("SELECT * FROM forms WHERE id = ?", inspection["form_id"])[0]
+    fields = db.execute("SELECT * FROM form_fields WHERE form_id = ?", form["id"])
 
-    form_result = db.execute("SELECT * FROM forms WHERE id = ?", inspection["form_id"])
-    if not form_result:
-        flash("Form not found.", "danger")
-        return redirect("/inspection_show")
-    form = form_result[0]
+    # Add current values to each field
+    for field in fields:
+        value = db.execute("""
+            SELECT value FROM inspection_fields
+            WHERE inspection_id = ? AND field_id = ?
+        """, inspection_id, field["id"])
+        field["value"] = value[0]["value"] if value else ""
 
-    fields = db.execute("""
-        SELECT f.*, i.value
-        FROM form_fields f
-        LEFT JOIN inspection_fields i ON i.field_id = f.id AND i.inspection_id = ?
-        WHERE f.form_id = ?
-        ORDER BY f.display_order ASC
-    """, inspection_id, form["id"])
-
+    # Get images
     images = db.execute("SELECT * FROM inspection_images WHERE inspection_id = ?", inspection_id)
 
+    # DELETE IMAGE logic
+    if request.method == "POST" and "delete_image_id" in request.form:
+        image_id = request.form.get("delete_image_id")
+        image = db.execute("SELECT filename FROM inspection_images WHERE id = ? AND inspection_id = ?", image_id, inspection_id)
+        if image:
+            filename = image[0]["filename"]
+            filepath = os.path.join("static", "inspection_photos", filename)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            db.execute("DELETE FROM inspection_images WHERE id = ?", image_id)
+            flash("Image deleted successfully.", "success")
+        else:
+            flash("Image not found or unauthorized.", "danger")
+        return redirect(url_for("inspection_edit", inspection_id=inspection_id))
+
+    # FORM SUBMISSION logic
     if request.method == "POST":
-        # Handle image deletion
-        delete_image_id = request.form.get("delete_image_id")
-        if delete_image_id:
-            image = db.execute("SELECT filename FROM inspection_images WHERE id = ? AND inspection_id = ?", delete_image_id, inspection_id)
-            if image:
-                filename = image[0]["filename"]
-                filepath = os.path.join("static", "inspection_photos", filename)
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-                db.execute("DELETE FROM inspection_images WHERE id = ?", delete_image_id)
-                flash("Photo deleted successfully.", "success")
-            else:
-                flash("Photo not found.", "warning")
-            return redirect(url_for('inspection_edit', inspection_id=inspection_id))
-
-        # Update inspection main fields
-        location = request.form.get("location")
-        notes = request.form.get("notes")
-        db.execute("UPDATE inspections SET location = ?, notes = ? WHERE id = ?", location, notes, inspection_id)
-
-        valid_count = 0
-        total_count = len(fields)
-        errors = []
-
+        # Save text, number, date, select, checkbox, radio values
         for field in fields:
-            field_id = field["id"]
-            field_name = f"field_{field_id}"
-            value_str = None
+            key = f"field_{field['id']}"
+            value = request.form.getlist(key) if field["field_type"] == "checkbox" else request.form.get(key)
+            value = ",".join(value) if isinstance(value, list) else value
+            db.execute("""
+                INSERT INTO inspection_fields (inspection_id, field_id, value)
+                VALUES (?, ?, ?)
+                ON CONFLICT(inspection_id, field_id)
+                DO UPDATE SET value = excluded.value
+            """, inspection_id, field["id"], value)
 
-            if field["field_type"] == "checkbox":
-                values = request.form.getlist(field_name)
-                value_str = ",".join(values) if values else None
-                if field["required"] and not values:
-                    errors.append(f"{field['label']} is required.")
-                elif values:
-                    valid_count += 1
-            else:
-                value = request.form.get(field_name)
-                if field["required"] and not value:
-                    errors.append(f"{field['label']} is required.")
-                elif value:
-                    valid_count += 1
-                value_str = value
-
-            # Validate date
-            if field["field_type"] == "date" and value_str:
-                try:
-                    date_obj = datetime.strptime(value_str, "%Y-%m-%d").date()
-                    if date_obj > datetime.today().date():
-                        errors.append(f"{field['label']} cannot be in the future.")
-                except ValueError:
-                    errors.append(f"{field['label']} is not a valid date.")
-
-            # Update or insert inspection_fields
-            existing = db.execute("SELECT 1 FROM inspection_fields WHERE inspection_id = ? AND field_id = ?", inspection_id, field_id)
-            if existing:
-                db.execute("UPDATE inspection_fields SET value = ? WHERE inspection_id = ? AND field_id = ?", value_str, inspection_id, field_id)
-            else:
-                db.execute("INSERT INTO inspection_fields (inspection_id, field_id, value) VALUES (?, ?, ?)", inspection_id, field_id, value_str)
-
-        if errors:
-            for error in errors:
-                flash(error, "warning")
-            images = db.execute("SELECT * FROM inspection_images WHERE inspection_id = ?", inspection_id)
-            return render_template("inspection_edit.html", form=form, fields=fields, inspection=inspection, images=images)
-
-        score = round((valid_count / total_count) * 100, 2) if total_count else 0
-        db.execute("UPDATE inspections SET score = ? WHERE id = ?", score, inspection_id)
-
-        # === Handle photos ===
-        image_folder = os.path.join("static", "inspection_photos")
-        os.makedirs(image_folder, exist_ok=True)
+        # Save notes and location
+        db.execute("UPDATE inspections SET notes = ?, location = ? WHERE id = ?", request.form.get("notes"), request.form.get("location"), inspection_id)
 
         # Handle uploaded photo
-        uploaded_file = request.files.get("photo_upload")
-        if uploaded_file and uploaded_file.filename:
-            filename = secure_filename(uploaded_file.filename)
-            # Only allow certain file extensions
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-                final_filename = f"{timestamp}_{filename}"
-                filepath = os.path.join(image_folder, final_filename)
-                uploaded_file.save(filepath)
-                db.execute("INSERT INTO inspection_images (inspection_id, filename) VALUES (?, ?)", inspection_id, final_filename)
-            else:
-                flash("Only image files are allowed.", "warning")
-
-        # Handle captured webcam photo
-        captured_data = request.form.get("captured_photo")
-        if captured_data and captured_data.startswith("data:image/"):
-            try:
-                header, encoded = captured_data.split(",", 1)
-                image_data = base64.b64decode(encoded)
-                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-                filename = f"{timestamp}_captured.png"
-                filepath = os.path.join(image_folder, filename)
-                with open(filepath, "wb") as f:
-                    f.write(image_data)
+        if "photo_upload" in request.files:
+            photo = request.files["photo_upload"]
+            if photo and photo.filename != "":
+                filename = secure_filename(photo.filename)
+                photo_path = os.path.join("static", "inspection_photos", filename)
+                photo.save(photo_path)
                 db.execute("INSERT INTO inspection_images (inspection_id, filename) VALUES (?, ?)", inspection_id, filename)
-            except Exception as e:
-                print("Capture error:", e)
-                flash("Failed to save captured photo.", "warning")
+
+        # Handle captured photo (base64)
+        captured = request.form.get("captured_photo")
+        if captured:
+            import base64, uuid
+            header, encoded = captured.split(",", 1)
+            binary_data = base64.b64decode(encoded)
+            filename = f"captured_{uuid.uuid4().hex}.png"
+            with open(os.path.join("static", "inspection_photos", filename), "wb") as f:
+                f.write(binary_data)
+            db.execute("INSERT INTO inspection_images (inspection_id, filename) VALUES (?, ?)", inspection_id, filename)
 
         flash("Inspection updated successfully.", "success")
-        return redirect(url_for('inspection_show', inspection_id=inspection_id))
+        return redirect(url_for("inspection_show", inspection_id=inspection_id))
 
     return render_template("inspection_edit.html", form=form, fields=fields, inspection=inspection, images=images)
 

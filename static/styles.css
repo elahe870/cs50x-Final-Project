@@ -44,3 +44,14 @@ nav .navbar-brand .green
     margin: 0 auto;
     background-color: yellow;
 }
+
+
+.camera-container {
+  display: flex;
+  flex-direction: column;  /* stack vertically */
+  align-items: center;     /* center horizontally */
+  justify-content: center; /* center vertically if height set */
+  gap: 10px;               /* space between video and button */
+  margin: 20px auto;       /* vertical margin and centered container */
+  max-width: 350px;        /* optional max width */
+}
