@@ -1,7 +1,7 @@
 import os
 
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session, Response
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -479,6 +479,8 @@ def inspection_delete(inspection_id):
         flash(f"Error deleting inspection: {str(e)}", "danger")
         return redirect("/inspection_show")
 
+import pdfkit
+from flask import make_response
 
 @app.route("/inspection/<int:inspection_id>")
 @login_required
@@ -637,9 +639,61 @@ def dashboard():
         SELECT ROUND(AVG(score), 2) AS avg FROM inspections WHERE inspector_id = ?
     """, user_id)[0]["avg"] or 0
 
-    return render_template("dashboard.html",
-                           total=total_inspections,
-                           this_month=inspections_this_month,
-                           deviations=deviations,
-                           recent=recent_inspections,
-                           avg_score=avg_score)
+    return render_template("dashboard.html", total=total_inspections, this_month=inspections_this_month,
+                           deviations=deviations, recent=recent_inspections, avg_score=avg_score)
+
+
+#import pdfkit
+#config = pdfkit.configuration(wkhtmltopdf='/home/elahe870/.local/lib/python3.10/site-packages')
+
+import pdfkit
+config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+pdfkit.from_url('http://example.com', 'out.pdf', configuration=config)
+
+import os
+
+@app.route("/inspection/<int:inspection_id>/pdf")
+@login_required
+def generate_pdf(inspection_id):
+
+    import os
+    base_path = os.path.abspath(os.path.dirname(__file__))
+
+    # Reuse data logic from inspection_preview
+    inspection = db.execute("""
+        SELECT i.*, f.name AS form_name, u.username AS inspector_name
+        FROM inspections i
+        JOIN forms f ON i.form_id = f.id
+        JOIN users u ON i.inspector_id = u.id
+        WHERE i.id = ?
+    """, inspection_id)
+    if not inspection:
+        flash("Inspection not found.", "danger")
+        return redirect("/inspection_show")
+
+    inspection = inspection[0]
+
+    fields = db.execute("""
+        SELECT ff.label, ff.field_type, ifs.value
+        FROM inspection_fields ifs
+        JOIN form_fields ff ON ifs.field_id = ff.id
+        WHERE ifs.inspection_id = ?
+        ORDER BY ff.display_order ASC
+    """, inspection_id)
+
+    images_data = db.execute("SELECT filename FROM inspection_images WHERE inspection_id = ?", inspection_id)
+    images_with_paths = []
+    image_folder = os.path.join(base_path, "static", "inspection_photos")
+    for img_data in images_data:
+        filepath = os.path.join(image_folder, img_data["filename"])
+        if os.path.exists(filepath):
+            images_with_paths.append({"filepath": filepath})
+
+    rendered = render_template("inspection_pdf.html", inspection=inspection, fields=fields, images=images_with_paths)
+    options = {
+        'enable-local-file-access': None,
+        'images': True,
+    }
+    pdf = pdfkit.from_string(rendered, False, configuration=config, options=options)
+    return Response(pdf, mimetype='application/pdf')
+
