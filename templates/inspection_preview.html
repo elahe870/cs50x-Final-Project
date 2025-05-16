@@ -42,8 +42,9 @@
     {% endif %}
 
     <div style="text-align: center; margin-top: 1rem;">
-        <a href="{{ url_for('generate_pdf', inspection_id=inspection.id) }}" class="btn btn-primary">🧾 Save as PDF</a>
         
+        <a href="{{ url_for('choose_folder', inspection_id=inspection.id) }}">Save as PDF</a>
+
     </div>
 
     <div class="mt-4">

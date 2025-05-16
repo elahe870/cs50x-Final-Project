@@ -12,6 +12,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import apology, login_required
 
 import datetime
+import time
 
 # Configure application
 app = Flask(__name__)
@@ -652,12 +653,22 @@ pdfkit.from_url('http://example.com', 'out.pdf', configuration=config)
 
 import os
 
-@app.route("/inspection/<int:inspection_id>/pdf")
+@app.route("/inspection/<int:inspection_id>/pdf", methods=["POST"])
 @login_required
 def generate_pdf(inspection_id):
 
     import os
     base_path = os.path.abspath(os.path.dirname(__file__))
+    from werkzeug.utils import secure_filename
+    folder = request.form.get("folder")
+    if not folder:
+        folder = "default"  # or you can show an error message
+
+    safe_folder = secure_filename(folder)
+    output_path = os.path.join("pdf_exports", safe_folder, f"inspection_{inspection_id}.pdf")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+
 
     # Reuse data logic from inspection_preview
     inspection = db.execute("""
@@ -694,6 +705,29 @@ def generate_pdf(inspection_id):
         'enable-local-file-access': None,
         'images': True,
     }
-    pdf = pdfkit.from_string(rendered, False, configuration=config, options=options)
-    return Response(pdf, mimetype='application/pdf')
 
+    timestamp = time.strftime("%Y%m%d%H%M%S")
+    filename = f"inspection_{inspection_id}_{timestamp}.pdf"
+    output_path = os.path.join("pdf_exports", safe_folder, filename)
+
+    pdf = pdfkit.from_string(rendered, output_path, configuration=config, options=options)
+    flash("PDF saved successfully!")
+    return redirect(url_for("inspection_show"))
+
+@app.route("/inspection/<int:inspection_id>/choose_folder", methods=["GET"])
+@login_required
+def choose_folder(inspection_id):
+    # Fetch inspection data to pass to template (optional, if you want to show details)
+    inspection = db.execute("SELECT * FROM inspections WHERE id = ?", inspection_id)
+    if not inspection:
+        flash("Inspection not found.", "danger")
+        return redirect(url_for("inspection_show"))
+    inspection = inspection[0]
+
+    return render_template("choose_folder.html", inspection=inspection)
+
+
+@app.route("/inspection/<int:inspection_id>/pdf", methods=["GET"])
+@login_required
+def redirect_to_choose_folder(inspection_id):
+    return redirect(url_for("choose_folder", inspection_id=inspection_id))
