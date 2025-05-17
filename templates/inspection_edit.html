@@ -81,9 +81,9 @@
     <input type="file" class="form-control" name="photo_upload" id="photo_upload" accept="image/*">
   </div>
 
-  <!-- Webcam capture -->
+  <!-- Camera capture -->
   <div class="form-group mb-3">
-    <label><strong>Capture Photo via Webcam</strong></label>
+    <label><strong>Capture Photo via Camera</strong></label>
     <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
       <video id="camera" width="320" height="240" autoplay style="border:1px solid #ccc;"></video>
       <button type="button" class="btn btn-secondary btn-sm" onclick="capturePhoto()">Capture Photo</button>
@@ -114,7 +114,7 @@
   </div>
 </div>
 
-<!-- Webcam script -->
+<!-- Camera script -->
 <script>
   const video = document.getElementById('camera');
   const canvas = document.getElementById('snapshot');
