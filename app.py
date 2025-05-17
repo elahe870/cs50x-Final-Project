@@ -648,10 +648,14 @@ def dashboard():
 #config = pdfkit.configuration(wkhtmltopdf='/home/elahe870/.local/lib/python3.10/site-packages')
 
 import pdfkit
-config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
-pdfkit.from_url('http://example.com', 'out.pdf', configuration=config)
+#config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+#pdfkit.from_url('http://example.com', 'out.pdf', configuration=config)
+path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 
 import os
+from flask import url_for
+from pathlib import Path
 
 @app.route("/inspection/<int:inspection_id>/pdf", methods=["POST"])
 @login_required
@@ -695,10 +699,12 @@ def generate_pdf(inspection_id):
     images_data = db.execute("SELECT filename FROM inspection_images WHERE inspection_id = ?", inspection_id)
     images_with_paths = []
     image_folder = os.path.join(base_path, "static", "inspection_photos")
+
+    images_with_paths = []
     for img_data in images_data:
-        filepath = os.path.join(image_folder, img_data["filename"])
-        if os.path.exists(filepath):
-            images_with_paths.append({"filepath": filepath})
+        filename = img_data["filename"]
+        file_url = url_for('static', filename=f'inspection_photos/{filename}', _external=True)
+        images_with_paths.append({"filepath": file_url})
 
     rendered = render_template("inspection_pdf.html", inspection=inspection, fields=fields, images=images_with_paths)
     options = {
