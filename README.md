@@ -15,3 +15,4 @@ Features:
 Future Improvements:
 🔐 Implement admin authentication to enable administrative control over user roles and permissions (User Management).
 📊 Add advanced search and reporting features to the inspections, forms library, and added user management sections.
+
