@@ -644,14 +644,9 @@ def dashboard():
                            deviations=deviations, recent=recent_inspections, avg_score=avg_score)
 
 
-#import pdfkit
-#config = pdfkit.configuration(wkhtmltopdf='/home/elahe870/.local/lib/python3.10/site-packages')
-
 import pdfkit
-#config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
-#pdfkit.from_url('http://example.com', 'out.pdf', configuration=config)
-path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+
+
 
 import os
 from flask import url_for
@@ -711,13 +706,33 @@ def generate_pdf(inspection_id):
         'enable-local-file-access': None,
         'images': True,
     }
+    #path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+    #config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+    # Default: No config
+    config = None
 
+    # Path for Linux (Codespace/local bin)
+    linux_path = './bin/wkhtmltopdf'
+
+    # Path for Windows (local machine)
+    windows_path = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+    # Check which path exists and set config
+    if os.path.isfile(linux_path):
+        config = pdfkit.configuration(wkhtmltopdf=linux_path)
+    elif os.path.isfile(windows_path):
+        config = pdfkit.configuration(wkhtmltopdf=windows_path)
+    else:
+        print("Warning: wkhtmltopdf binary not found. PDF generation will be disabled.")
     timestamp = time.strftime("%Y%m%d%H%M%S")
     filename = f"inspection_{inspection_id}_{timestamp}.pdf"
     output_path = os.path.join("pdf_exports", safe_folder, filename)
 
-    pdf = pdfkit.from_string(rendered, output_path, configuration=config, options=options)
-    flash("PDF saved successfully!")
+    if config:
+        pdf = pdfkit.from_string(rendered, output_path, configuration=config, options=options)
+        flash("PDF saved successfully!")
+    else:
+        flash("PDF generation skipped because wkhtmltopdf is not configured.")
+    
     return redirect(url_for("inspection_show"))
 
 @app.route("/inspection/<int:inspection_id>/choose_folder", methods=["GET"])
