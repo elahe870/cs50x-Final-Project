@@ -20,12 +20,6 @@
 
     📝 Completed inspections can be saved as PDF documents.
 
-## Future Improvements:
-
-    🔐 Implement admin authentication to enable administrative control over user roles and permissions (User Management).
-
-    📊 Add advanced search and reporting features to the inspections, forms library, and added user management sections.
-
 ## Installation Tips:
 
     - Ensure `cs50` and `pdfkit` are installed via pip: 
@@ -54,7 +48,8 @@
 
         Note: Ensure that the wkhtmltopdf executable is in your system's PATH so that the application can access it.
 
-        By following these steps, you'll have wkhtmltopdf properly installed, allowing the application to generate PDF files successfully.
+        By following these steps, you'll have wkhtmltopdf properly installed, allowing the application to 
+        generate PDF files successfully.
 
 
 ## The database (GMP.db) includes the following tables:
@@ -71,3 +66,12 @@
 
     inspection_images: stores image filenames related to inspections (id, inspection_id, filename, uploaded_at)
 
+## Future Improvements:
+
+    🔐 Implement admin authentication to enable administrative control over user roles and permissions (User Management).
+
+    📊 Add advanced search and reporting features to the inspections, forms library, and added user management sections.
+
+## Contact Information:
+    es.haghighat95@gmail.com
+    githun and edx username: elahe870
