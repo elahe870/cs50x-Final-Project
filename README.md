@@ -1,4 +1,4 @@
-# cs50x-Final-Project: GMP (Good Manufacturing Practice)
+# 💊cs50x-Final-Project: GMP (Good Manufacturing Practice)
 
 Purpose:    
     A secure, digital platform designed for inspectors in the food and pharmaceutical industries to efficiently record, manage, and review inspection reports.
@@ -24,13 +24,33 @@ Future Improvements:
 
 Installation Tips:
 
-    -Ensure `cs50` and `pdfkit` are installed via pip: 
+    - Ensure `cs50` and `pdfkit` are installed via pip: 
         pip install cs50 pdfkit
 
-    - wkhtmltopdf should be installed (on 1-windows or 2-linux , recognized in program) in 
-    order to pdf files generate successfully.
-
     - SQLite is used for local database storage (no additional setup needed).
+
+    - 📄 PDF Generation Requirement: Installing wkhtmltopdf
+        To enable PDF generation in this application, ensure that wkhtmltopdf is installed and accessible. The application automatically checks both Windows and Linux path for wkhtmltopdf.
+
+        For Windows:
+            1- Download the Windows installer from the official wkhtmltopdf downloads page.
+
+            2- Run the installer and follow the on-screen instructions to complete the installation.
+
+            3- Verify the installation by opening Command Prompt and running: wkhtmltopdf --version
+               You should see the installed version number displayed.
+
+        For Linux:
+            1- Download the appropriate Linux package from the wkhtmltopdf downloads page.
+
+            2- Install the package using your distribution's package manager. For example, on Ubuntu:  
+                sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
+
+            3- Verify the installation by running: wkhtmltopdf --version
+
+        Note: Ensure that the wkhtmltopdf executable is in your system's PATH so that the application can access it.
+
+        By following these steps, you'll have wkhtmltopdf properly installed, allowing the application to generate PDF files successfully.
 
 
 The database (GMP.db) includes the following tables:
