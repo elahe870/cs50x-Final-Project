@@ -2,7 +2,7 @@
 
 ## Purpose:    
 
-    A secure, digital platform designed for inspectors in the food and pharmaceutical industries to efficiently record, manage, and review inspection reports.
+    A secure, digital platform designed for inspectors in the food and pharmaceutical industries to efficiently record,     manage, and review inspection reports.
 
 ## Motivation:
 
@@ -75,6 +75,17 @@
 
     📊 Add advanced search and reporting features to the inspections, forms library, and added user management sections.
 
+## Acknowledgements
+
+During the development of this project, I used the following tools to assist with ideas, design, implementation, and debugging:
+
+- **ChatGPT** – for help with understanding concepts, generating code snippets, and improving design structure.
+- **GitHub Copilot** – for code suggestions and auto-completion while programming.
+- **Perplexity AI** – for gathering information and exploring ideas during the planning and research phase.
+
+These tools were used to support learning and accelerate development, while ensuring that I understood and implemented all parts of the project myself in accordance with CS50’s academic honesty policy.
+
 ## Contact Information:
+
     es.haghighat95@gmail.com
-    githun and edx username: elahe870
+    github and edx username: elahe870
