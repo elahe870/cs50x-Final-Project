@@ -15,7 +15,7 @@ import datetime
 import time
 
 # Configure application
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 app.secret_key = 'your_secret_key'
 
 
@@ -510,10 +510,7 @@ def inspection_preview(inspection_id):
     """, inspection_id)
 
     # Get attached images
-    images = db.execute("""
-        SELECT filename FROM inspection_images
-        WHERE inspection_id = ?
-    """, inspection_id)
+    images = db.execute("SELECT * FROM inspection_images WHERE inspection_id = ?", inspection_id)
 
     return render_template("inspection_preview.html", inspection=inspection, fields=fields, images=images)
 

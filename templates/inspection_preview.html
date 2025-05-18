@@ -30,10 +30,7 @@
         <div class="d-flex flex-wrap justify-content-center gap-3">
         {% for image in images %}
             <div class="card border-0 shadow-sm" style="width: 18rem;">
-                    <img src="{{ request.url_root ~ 'static/inspection_photos/' ~ image.filename }}"
-                    class="card-img-top img-fluid"
-                    style="max-height: 250px; object-fit: contain;"
-                    alt="Inspection photo">
+                <img src="{{ url_for('static', filename='inspection_photos/' ~ image.filename) }}" alt="Photo" width="150" class="img-thumbnail">
             </div>
         {% endfor %}
     </div>
