@@ -66,6 +66,9 @@
 
     inspection_images: stores image filenames related to inspections (id, inspection_id, filename, uploaded_at)
 
+    📝Note: The file `db_schema_safe.txt` contains all the `CREATE TABLE` statements needed to set up the database.
+    
+
 ## Future Improvements:
 
     🔐 Implement admin authentication to enable administrative control over user roles and permissions (User Management).
