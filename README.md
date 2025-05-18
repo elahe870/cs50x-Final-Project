@@ -1,15 +1,19 @@
-## 💊cs50x-Final-Project: GMP (Good Manufacturing Practice)
+## 💊CS50x-Final-Project: GMP (Good Manufacturing Practice)
 
 ## Purpose:    
+
     A secure, digital platform designed for inspectors in the food and pharmaceutical industries to efficiently record, manage, and review inspection reports.
 
 ## Motivation:
+
     Addressing the industry's need in developing countries for reliable and efficient inspection systems.
 
 ## Impact:
+
     This project can serve as a starting point for developing digital solutions in the field of inspection and compliance.
 
 ## Features: 
+
     📄 All form fields are dynamically defined, making it easy to create and customize new forms.
 
     📷 Allows capturing photo using the camera or uploading saved image for each inspection.

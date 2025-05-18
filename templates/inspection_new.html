@@ -77,11 +77,16 @@
         <label for="notes"><strong>Notes</strong></label>
         <textarea class="form-control" name="notes" id="notes">{{ inspection.notes or '' }}</textarea>
     </div>
-
     <!-- Upload image -->
     <div class="form-group mb-3">
         <label for="photo_upload"><strong>Upload Photo</strong></label>
         <input type="file" class="form-control" name="photo_upload" id="photo_upload" accept="image/*">
+    </div>
+    
+    <!-- Preview for uploaded photo -->
+    <div id="uploadPreviewContainer" class="mt-2 d-none">
+        <p><label><strong>Selected Photo Preview:</strong></label></p>
+        <img id="uploadPreview" src="" alt="Uploaded Preview" class="img-thumbnail" width="150">
     </div>
 
     <!-- Camera capture -->
@@ -138,5 +143,20 @@
         hiddenInput.value = dataUrl;
         canvas.classList.remove('d-none');
     }
+
+    // Preview uploaded file
+    photo_upload.addEventListener('change', function () {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                uploadPreview.src = e.target.result;
+                uploadPreviewContainer.classList.remove('d-none');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            uploadPreviewContainer.classList.add('d-none');
+        }
+    });
 </script>
 {% endblock %}
