@@ -6,31 +6,25 @@
 #### Description:
      This project is a starting point to create a secure, digital platform designed for inspectors in the food and      pharmaceutical industries to design forms dynamically and efficiently record, manage, and review inspection reports.
 
-# Project address in github: 
+## Project address in github: 
     https://github.com/elahe870/cs50x-Final-Project
-
-## Contact Information:
-
-    es.haghighat95@gmail.com
-    github and edx username: elahe870
-
 
 
 ## 💊CS50x-Final-Project: GMP (Good Manufacturing Practice)
 
-## Purpose:    
+### Purpose:    
 
     A secure, digital platform designed for inspectors in the food and pharmaceutical industries to efficiently record,     manage, and review inspection reports.
 
-## Motivation:
+### Motivation:
 
     Addressing the industry's need in developing countries for reliable and efficient inspection systems.
 
-## Impact:
+### Impact:
 
     This project can serve as a starting point for developing digital solutions in the field of inspection and compliance.
 
-## Features: 
+### Features: 
 
     📄 All form fields are dynamically defined, making it easy to create and customize new forms.
 
@@ -38,7 +32,7 @@
 
     📝 Completed inspections can be saved as PDF documents.
 
-## Installation Tips:
+### Installation Tips:
 
     - Ensure `cs50` and `pdfkit` are installed via pip: 
         pip install cs50 pdfkit
@@ -70,7 +64,7 @@
         generate PDF files successfully.
 
 
-## The database (GMP.db) includes the following tables:
+### The database (GMP.db) includes the following tables:
 
     users: stores user information (id, username, hash, role, created_at)
 
@@ -87,13 +81,13 @@
     📝Note: The file `db_schema_safe.txt` contains all the `CREATE TABLE` statements needed to set up the database.
     
 
-## Future Improvements:
+### Future Improvements:
 
     🔐 Implement admin authentication to enable administrative control over user roles and permissions (User Management).
 
     📊 Add advanced search and reporting features to the inspections, forms library, and added user management sections.
 
-## Acknowledgements
+### Acknowledgements
 
 During the development of this project, I used the following tools to assist with ideas, design, implementation, and debugging:
 
@@ -102,4 +96,9 @@ During the development of this project, I used the following tools to assist wit
 - **Perplexity AI** – for gathering information and exploring ideas during the planning and research phase.
 
 These tools were used to support learning and accelerate development, while ensuring that I understood and implemented all parts of the project myself in accordance with CS50’s academic honesty policy.
+
+### Contact Information:
+
+    es.haghighat95@gmail.com
+    github and edx username: elahe870
 
