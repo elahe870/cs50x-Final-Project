@@ -237,7 +237,9 @@ def edit_form(form_id):
         flash("Form updated successfully!")
         ## SECIRITY ALERT SO OMMITED: return redirect(f"/forms_show/{form_id}/preview")
         # Validate form_id before redirecting
-        if db.execute("SELECT id FROM form_fields WHERE form_id = ?", form_id):
+        # Validate form_id against the database
+        valid_form = db.execute("SELECT id FROM forms WHERE id = ?", form_id)
+        if valid_form:
             return redirect(f"/forms_show/{form_id}/preview")
         else:
             return redirect("/")
