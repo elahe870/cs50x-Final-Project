@@ -45,4 +45,21 @@ nav .navbar-brand .green
     background-color: yellow;
 }
 
+.form-check {
+    width: 50%;
+    margin: 0 auto;
+    display: flex;             
+    align-items: center;       
+    justify-content: center;    
+    gap: 0.5rem;               
+}
+
+.form-check-label {
+    margin: 0;                 
+    text-align: center;
+}
+
+.form-check-input {
+    margin: 0;                
+}
 
