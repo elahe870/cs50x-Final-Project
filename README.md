@@ -1,3 +1,21 @@
+# GMP (Good Manufacturing Practice)
+
+#### Video Demo:  https://youtu.be/NE3dVVWyKnE
+    This video demo shows some part of the program : shows briefly the Form Library navbar section. which defines forms with completely dynamic fields. (These fields can have "text", "textarea" "dropdown", "radio", "checkbox", "number", "date" type but because of time not shown in video). Then in video I try to fill in a new inspection in one of the form's format. in this part I can capture photo or upload a photo file and they are shown and saved. Then I save this inspection to a PDF file in a chosen sub-directory in pdf_exports directory. Photos attached to this inspection will be included in PDF.
+
+#### Description:
+     This project is a starting point to create a secure, digital platform designed for inspectors in the food and      pharmaceutical industries to design forms dynamically and efficiently record, manage, and review inspection reports.
+
+# Project address in github: 
+    https://github.com/elahe870/cs50x-Final-Project
+
+## Contact Information:
+
+    es.haghighat95@gmail.com
+    github and edx username: elahe870
+
+
+
 ## 💊CS50x-Final-Project: GMP (Good Manufacturing Practice)
 
 ## Purpose:    
@@ -85,7 +103,3 @@ During the development of this project, I used the following tools to assist wit
 
 These tools were used to support learning and accelerate development, while ensuring that I understood and implemented all parts of the project myself in accordance with CS50’s academic honesty policy.
 
-## Contact Information:
-
-    es.haghighat95@gmail.com
-    github and edx username: elahe870

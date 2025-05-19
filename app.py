@@ -642,9 +642,6 @@ def dashboard():
 
 
 import pdfkit
-
-
-
 import os
 from flask import url_for
 from pathlib import Path
@@ -663,10 +660,8 @@ def generate_pdf(inspection_id):
     safe_folder = secure_filename(folder)
     output_path = os.path.join("pdf_exports", safe_folder, f"inspection_{inspection_id}.pdf")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    
 
-
-    # Reuse data logic from inspection_preview
+    # code from inspection_preview
     inspection = db.execute("""
         SELECT i.*, f.name AS form_name, u.username AS inspector_name
         FROM inspections i
@@ -688,6 +683,7 @@ def generate_pdf(inspection_id):
         ORDER BY ff.display_order ASC
     """, inspection_id)
 
+
     images_data = db.execute("SELECT filename FROM inspection_images WHERE inspection_id = ?", inspection_id)
     images_with_paths = []
     image_folder = os.path.join(base_path, "static", "inspection_photos")
@@ -703,9 +699,7 @@ def generate_pdf(inspection_id):
         'enable-local-file-access': None,
         'images': True,
     }
-    #path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-    #config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-    # Default: No config
+    
     config = None
 
     # Path for Linux (Codespace/local bin)
