@@ -204,6 +204,14 @@ def edit_form(form_id):
         db.execute("UPDATE forms SET name = ?, description = ? WHERE id = ?",
                    name, description, form_id)
         
+
+        
+        rows = db.execute("SELECT 1 FROM inspections WHERE form_id = ? LIMIT 1", form_id)
+
+        if rows:
+            flash("Cannot edit this form because it is already used in inspections.", "danger")
+            return redirect("/")
+        
         # First delete existing fields
         db.execute("DELETE FROM form_fields WHERE form_id = ?", form_id)
         
@@ -227,7 +235,13 @@ def edit_form(form_id):
                        form_id, field_label, field_type, field_option, required, i+1)
 
         flash("Form updated successfully!")
-        return redirect(f"/forms_show/{form_id}/preview")
+        ## SECIRITY ALERT SO OMMITED: return redirect(f"/forms_show/{form_id}/preview")
+        # Validate form_id before redirecting
+        if db.execute("SELECT id FROM form_fields WHERE form_id = ?", form_id):
+            return redirect(f"/forms_show/{form_id}/preview")
+        else:
+            return redirect("/")
+
     
     else:
         # GET request - load existing data
@@ -240,6 +254,15 @@ def edit_form(form_id):
 @app.route("/forms_show/<int:form_id>/delete", methods=["POST"])
 @login_required
 def delete_form(form_id):
+
+    #Verify existing inspection 
+    rows = db.execute("SELECT 1 FROM inspections WHERE form_id = ? LIMIT 1", form_id)
+
+    if rows:
+            flash("Cannot delete this form because it is already used in inspections.", "danger")
+            return redirect("/")
+    
+
     # Verify the current user owns the form or has permission
     form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
     if not form:
@@ -658,8 +681,16 @@ def generate_pdf(inspection_id):
         folder = "default"  # or you can show an error message
 
     safe_folder = secure_filename(folder)
-    output_path = os.path.join("pdf_exports", safe_folder, f"inspection_{inspection_id}.pdf")
+    base_export_path = os.path.abspath(os.path.join(base_path, "pdf_exports"))
+    output_path = os.path.abspath(os.path.join(base_export_path, safe_folder, f"inspection_{inspection_id}.pdf"))
+
+    # Ensure the output path is within the base_export_path
+    if not output_path.startswith(base_export_path):
+        raise Exception("Invalid folder path.")
+
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+
 
     # code from inspection_preview
     inspection = db.execute("""
