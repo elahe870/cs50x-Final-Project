@@ -395,8 +395,9 @@ def inspection_new():
             if field['field_type'] == 'date' and value:
                 try:
                     date_obj = datetime.strptime(value, '%Y-%m-%d').date()
-                    if date_obj > datetime.today().date():
-                        errors.append(f"{field['label']} cannot be in the future.")
+                    #Date can be in future : due date 
+                    ##if date_obj > datetime.today().date():
+                    ##    errors.append(f"{field['label']} cannot be in the future.")
                 except ValueError:
                     errors.append(f"{field['label']} is not a valid date.")
                     continue
