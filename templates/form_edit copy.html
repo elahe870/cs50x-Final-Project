@@ -1,0 +1,107 @@
+{% block title %}Edit Form{% endblock %}
+
+{% block main %}
+<!-- Centered container -->
+<div class="container mt-5">
+  <div class="mx-auto" style="max-width: 900px;">
+
+    <!-- Card box -->
+    <div class="card shadow-sm p-4 bg-white">
+      <h2 class="text-center mb-3">📝 Edit Form</h2>
+      <p class="text-muted text-center">Modify form details and fields.</p>
+
+      <!-- Form start -->
+      <form action="/forms_show/{{ form.id }}/edit" method="post">
+        <!-- Form name -->
+        <div class="mb-3">
+          <label for="name" class="form-label">Form Name</label>
+          <input type="text" class="form-control" name="name" value="{{ form.name }}" required>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-4">
+          <label for="description" class="form-label">Form Description</label>
+          <textarea class="form-control" name="description" rows="4" required>{{ form.description }}</textarea>
+        </div>
+
+        <!-- Fields section -->
+        <hr>
+        <h4 class="mt-4">Form Fields</h4>
+        <div id="fields">
+          {% for field in fields %}
+          <div class="field-group border rounded bg-light p-3 mb-4">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label>Label</label>
+                <input type="text" name="field_label" class="form-control" value="{{ field.label }}" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label>Field Type</label>
+                <select name="field_type" class="form-select" required>
+                  <option value="text" {% if field.field_type == "text" %}selected{% endif %}>Text</option>
+                  <option value="textarea" {% if field.field_type == "textarea" %}selected{% endif %}>Textarea</option>
+                  <option value="select" {% if field.field_type == "select" %}selected{% endif %}>Dropdown</option>
+                  <option value="radio" {% if field.field_type == "radio" %}selected{% endif %}>Radio</option>
+                  <option value="checkbox" {% if field.field_type == "checkbox" %}selected{% endif %}>Checkbox</option>
+                  <option value="number" {% if field.field_type == "number" %}selected{% endif %}>Number</option>
+                  <option value="date" {% if field.field_type == "date" %}selected{% endif %}>Date</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label>Options (comma separated for select/radio/checkbox)</label>
+              <input type="text" name="field_options" class="form-control" value="{{ field.options if field.options }}">
+            </div>
+
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" name="field_required" value="{{ loop.index0 }}" {% if field.required %}checked{% endif %}>
+              <label class="form-check-label">Required</label>
+            </div>
+
+            <button type="button" class="btn btn-outline-danger btn-sm remove-field">Remove Field</button>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Add Field Button -->
+        <button type="button" class="btn btn-outline-secondary mb-4" id="addField">
+          <i class="bi bi-plus-circle"></i> Add Another Field
+        </button>
+
+        <!-- Submit Button -->
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript to handle dynamic field addition -->
+<script>
+document.getElementById("addField").addEventListener("click", function () {
+  const fieldGroup = document.querySelector(".field-group");
+  const newGroup = fieldGroup.cloneNode(true);
+  newGroup.querySelectorAll("input, select").forEach(el => {
+    if (el.type === "checkbox") {
+      el.checked = true;
+    } else {
+      el.value = "";
+    }
+  });
+  document.getElementById("fields").appendChild(newGroup);
+});
+
+document.addEventListener("click", function (e) {
+  if (e.target.classList.contains("remove-field")) {
+    const fields = document.querySelectorAll(".field-group");
+    if (fields.length > 1) {
+      e.target.closest(".field-group").remove();
+    }
+  }
+});
+</script>
+{% endblock %}

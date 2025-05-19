@@ -1,107 +1,98 @@
+{% extends "layout.html" %}
+
 {% block title %}Edit Form{% endblock %}
 
 {% block main %}
-<!-- Centered container -->
-<div class="container mt-5">
-  <div class="mx-auto" style="max-width: 900px;">
+<div class="container mt-4">
+    <h2>Edit Form</h2>
+    <p class="text-muted">Edit GMP inspection form and its fields.</p>
 
-    <!-- Card box -->
-    <div class="card shadow-sm p-4 bg-white">
-      <h2 class="text-center mb-3">📝 Edit Form</h2>
-      <p class="text-muted text-center">Modify form details and fields.</p>
-
-      <!-- Form start -->
-      <form action="/forms_show/{{ form.id }}/edit" method="post">
-        <!-- Form name -->
+    <form action="/forms_show/{{ form['id'] }}/edit" method="post">
         <div class="mb-3">
-          <label for="name" class="form-label">Form Name</label>
-          <input type="text" class="form-control" name="name" value="{{ form.name }}" required>
+            <label for="name" class="form-label">Form Name</label>
+            <input type="text" class="form-control" name="name" value="{{ form['name'] }}" required>
         </div>
 
-        <!-- Description -->
-        <div class="mb-4">
-          <label for="description" class="form-label">Form Description</label>
-          <textarea class="form-control" name="description" rows="4" required>{{ form.description }}</textarea>
+        <div class="mb-3">
+            <label for="description" class="form-label">Form Description</label>
+            <textarea class="form-control" name="description" rows="3" required>{{ form['description'] }}</textarea>
         </div>
 
-        <!-- Fields section -->
         <hr>
-        <h4 class="mt-4">Form Fields</h4>
+        <h5>Fields</h5>
         <div id="fields">
-          {% for field in fields %}
-          <div class="field-group border rounded bg-light p-3 mb-4">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label>Label</label>
-                <input type="text" name="field_label" class="form-control" value="{{ field.label }}" required>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label>Field Type</label>
-                <select name="field_type" class="form-select" required>
-                  <option value="text" {% if field.field_type == "text" %}selected{% endif %}>Text</option>
-                  <option value="textarea" {% if field.field_type == "textarea" %}selected{% endif %}>Textarea</option>
-                  <option value="select" {% if field.field_type == "select" %}selected{% endif %}>Dropdown</option>
-                  <option value="radio" {% if field.field_type == "radio" %}selected{% endif %}>Radio</option>
-                  <option value="checkbox" {% if field.field_type == "checkbox" %}selected{% endif %}>Checkbox</option>
-                  <option value="number" {% if field.field_type == "number" %}selected{% endif %}>Number</option>
-                  <option value="date" {% if field.field_type == "date" %}selected{% endif %}>Date</option>
-                </select>
-              </div>
+            {% for field in fields %}
+            <div class="field-group border rounded p-3 mb-3">
+                <input type="hidden" name="field_id" value="{{ field['id'] }}">
+                <div class="mb-2">
+                    <label>Label</label>
+                    <input type="text" name="field_label" class="form-control" value="{{ field['label'] }}" required>
+                </div>
+                <div class="mb-2">
+                    <label>Field Type</label>
+                    <select name="field_type" class="form-select" required>
+                        {% for option in ['text', 'textarea', 'select', 'radio', 'checkbox', 'number', 'date'] %}
+                        <option value="{{ option }}" {% if field['field_type'] == option %}selected{% endif %}>{{ option.capitalize() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label>Options (comma separated for dropdown/radio/checkbox)</label>
+                    <input type="text" name="field_options" class="form-control" value="{{ field['options'] or '' }}">
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="field_required" value="1" {% if field['required'] %}checked{% endif %}>
+                    <label class="form-check-label">Required</label>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm mt-2 remove-field">Remove Field</button>
             </div>
-
-            <div class="mb-3">
-              <label>Options (comma separated for select/radio/checkbox)</label>
-              <input type="text" name="field_options" class="form-control" value="{{ field.options if field.options }}">
-            </div>
-
-            <div class="form-check mb-3">
-              <input class="form-check-input" type="checkbox" name="field_required" value="{{ loop.index0 }}" {% if field.required %}checked{% endif %}>
-              <label class="form-check-label">Required</label>
-            </div>
-
-            <button type="button" class="btn btn-outline-danger btn-sm remove-field">Remove Field</button>
-          </div>
-          {% endfor %}
+            {% endfor %}
         </div>
 
-        <!-- Add Field Button -->
-        <button type="button" class="btn btn-outline-secondary mb-4" id="addField">
-          <i class="bi bi-plus-circle"></i> Add Another Field
-        </button>
+        <button type="button" class="btn btn-secondary mb-3" id="addField">➕ Add Another Field</button>
 
-        <!-- Submit Button -->
         <div class="d-grid">
-          <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save"></i> Save Changes
-          </button>
+            <button type="submit" class="btn btn-primary">✅ Save Form</button>
         </div>
-      </form>
-    </div>
-  </div>
+    </form>
 </div>
 
-<!-- JavaScript to handle dynamic field addition -->
 <script>
-document.getElementById("addField").addEventListener("click", function () {
-  const fieldGroup = document.querySelector(".field-group");
-  const newGroup = fieldGroup.cloneNode(true);
-  newGroup.querySelectorAll("input, select").forEach(el => {
-    if (el.type === "checkbox") {
-      el.checked = true;
-    } else {
-      el.value = "";
+    function updateRequiredValues() {
+        const checkboxes = document.querySelectorAll("#fields .field-group .form-check-input");
+        checkboxes.forEach((checkbox, index) => {
+            checkbox.value = "1"; // always 1 for 'required' checkbox
+        });
     }
-  });
-  document.getElementById("fields").appendChild(newGroup);
-});
 
-document.addEventListener("click", function (e) {
-  if (e.target.classList.contains("remove-field")) {
-    const fields = document.querySelectorAll(".field-group");
-    if (fields.length > 1) {
-      e.target.closest(".field-group").remove();
-    }
-  }
-});
+    document.getElementById("addField").addEventListener("click", function () {
+        const fieldGroup = document.querySelector(".field-group");
+        const newGroup = fieldGroup.cloneNode(true);
+
+        newGroup.querySelectorAll("input, select").forEach(el => {
+            if (el.name === "field_id") {
+                el.remove(); // remove field_id for new fields
+            } else if (el.type === "checkbox") {
+                el.checked = false;
+            } else {
+                el.value = "";
+            }
+        });
+
+        document.getElementById("fields").appendChild(newGroup);
+        updateRequiredValues();
+    });
+
+    document.addEventListener("click", function (e) {
+        if (e.target.classList.contains("remove-field")) {
+            const fields = document.querySelectorAll(".field-group");
+            if (fields.length > 1) {
+                e.target.closest(".field-group").remove();
+                updateRequiredValues();
+            }
+        }
+    });
+
+    updateRequiredValues();
 </script>
 {% endblock %}
