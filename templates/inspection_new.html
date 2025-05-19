@@ -51,7 +51,7 @@
                 {% set selected = field.value.split(',') if field.value else [] %}
                 {% for option in field.options.split(',') %}
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="field_{{ field.id }}" id="field_{{ field.id }}_{{ loop.index }}" value="{{ option.strip() }}" {% if option.strip() in selected %}checked{% endif %}>
+                        <input class="form-check-input" type="checkbox" name="field_{{ field.id }}[]" id="field_{{ field.id }}_{{ loop.index }}" value="{{ option.strip() }}" {% if option.strip() in selected %}checked{% endif %}>
                         <label class="form-check-label" for="field_{{ field.id }}_{{ loop.index }}">{{ option.strip() }}</label>
                     </div>
                 {% endfor %}
