@@ -240,7 +240,9 @@ def edit_form(form_id):
         # Validate form_id against the database
         valid_form = db.execute("SELECT id FROM forms WHERE id = ?", form_id)
         if valid_form:
-            return redirect(f"/forms_show/{form_id}/preview")
+            ##Security considering
+            safe_url = f"/forms_show/{valid_form[0]['id']}/preview"
+            return redirect(safe_url)
         else:
             return redirect("/")
 
