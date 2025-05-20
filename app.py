@@ -79,7 +79,7 @@ def login():
     # User reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("login.html")
-    
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -203,18 +203,18 @@ def edit_form(form_id):
         description = request.form.get("description")
         db.execute("UPDATE forms SET name = ?, description = ? WHERE id = ?",
                    name, description, form_id)
-        
 
-        
+
+
         rows = db.execute("SELECT 1 FROM inspections WHERE form_id = ? LIMIT 1", form_id)
 
         if rows:
             flash("Cannot edit this form because it is already used in inspections.", "danger")
             return redirect("/")
-        
+
         # First delete existing fields
         db.execute("DELETE FROM form_fields WHERE form_id = ?", form_id)
-        
+
         # Then add updated fields (similar to new_form)
         fields = request.form.getlist("field_label")
         field_types = request.form.getlist("field_type")
@@ -225,20 +225,20 @@ def edit_form(form_id):
             field_label = fields[i]
             field_type = field_types[i]
             field_option = field_options[i] if field_type in ["select", "radio", "checkbox", "dropdown"] else None
-            
+
             # Handle required checkbox logic
             required = 1 if str(i) in field_required else 0
 
-            db.execute("""INSERT INTO form_fields 
-                          (form_id, label, field_type, options, required, display_order) 
+            db.execute("""INSERT INTO form_fields
+                          (form_id, label, field_type, options, required, display_order)
                           VALUES (?, ?, ?, ?, ?, ?)""",
                        form_id, field_label, field_type, field_option, required, i+1)
 
         flash("Form updated successfully!")
-        
+
         return redirect("/forms_show")
 
-    
+
     else:
         # GET request - load existing data
         form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)[0]
@@ -251,13 +251,13 @@ def edit_form(form_id):
 @login_required
 def delete_form(form_id):
 
-    #Verify existing inspection 
+    #Verify existing inspection
     rows = db.execute("SELECT 1 FROM inspections WHERE form_id = ? LIMIT 1", form_id)
 
     if rows:
             flash("Cannot delete this form because it is already used in inspections.", "danger")
             return redirect("/")
-    
+
 
     # Verify the current user owns the form or has permission
     form = db.execute("SELECT * FROM forms WHERE id = ?", form_id)
@@ -387,7 +387,7 @@ def inspection_new():
             if field['field_type'] == 'date' and value:
                 try:
                     date_obj = datetime.strptime(value, '%Y-%m-%d').date()
-                    #Date can be in future : due date 
+                    #Date can be in future : due date
                     ##if date_obj > datetime.today().date():
                     ##    errors.append(f"{field['label']} cannot be in the future.")
                 except ValueError:
@@ -509,7 +509,7 @@ def inspection_delete(inspection_id):
 
 
         #db.execute("DELETE FROM inspection_images WHERE inspection_id = ?", inspection_id) #old one
-        
+
         # Finally, delete the inspection itself
         db.execute("DELETE FROM inspections WHERE id = ?", inspection_id)
 
@@ -645,30 +645,30 @@ def dashboard():
     user_id = session["user_id"]
 
     # 1. Total inspections by user
-    total_inspections = db.execute(""" 
-        SELECT COUNT(*) AS count FROM inspections WHERE inspector_id = ? 
+    total_inspections = db.execute("""
+        SELECT COUNT(*) AS count FROM inspections WHERE inspector_id = ?
     """, user_id)[0]["count"]
-    
+
     # 2. Inspections this month
     current_month = datetime.now().strftime("%Y-%m")
     inspections_this_month = db.execute("""
-        SELECT COUNT(*) AS count FROM inspections 
+        SELECT COUNT(*) AS count FROM inspections
         WHERE strftime('%Y-%m', submitted_at) = ?
     """, (current_month,))[0]["count"]
 
     # 3. Inspections with deviations (score < 100)
     deviations = db.execute("""
-        SELECT COUNT(*) AS count FROM inspections 
+        SELECT COUNT(*) AS count FROM inspections
         WHERE inspector_id = ? AND score < 100
     """, user_id)[0]["count"]
 
     # 4. Recent 5 inspections
     recent_inspections = db.execute("""
-        SELECT i.id, f.name AS form_name, i.submitted_at, i.location, i.score 
-        FROM inspections i 
-        JOIN forms f ON i.form_id = f.id 
-        WHERE i.inspector_id = ? 
-        ORDER BY i.submitted_at DESC 
+        SELECT i.id, f.name AS form_name, i.submitted_at, i.location, i.score
+        FROM inspections i
+        JOIN forms f ON i.form_id = f.id
+        WHERE i.inspector_id = ?
+        ORDER BY i.submitted_at DESC
         LIMIT 5
     """, user_id)
 
@@ -747,23 +747,23 @@ def generate_pdf(inspection_id):
         'enable-local-file-access': None,
         'images': True,
     }
-    
+
     config = None
 
-    # Path for Linux (Codespace/local bin)
-    
-    linux_path = '/usr/local/bin/wkhtmltopdf'
-
-    # Path for Windows (local machine)
+    # Define paths for Linux (Codespace/local bin) and Windows (local machine)
+    linux_path = '/workspaces/Finalproject/bin/wkhtmltopdf'
     windows_path = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-    # Check which path exists and set config
-    if linux_path:
+
+    # Check if the Linux path exists and set config
+    if os.path.isfile(linux_path):
         config = pdfkit.configuration(wkhtmltopdf=linux_path)
+    # Check if the Windows path exists and set config
     elif os.path.isfile(windows_path):
         config = pdfkit.configuration(wkhtmltopdf=windows_path)
     else:
-        print("Warning: wkhtmltopdf binary not found. PDF generation will be disabled.")
-        
+        flash("Warning: wkhtmltopdf binary not found. PDF generation will be disabled.")
+        return redirect(url_for("inspection_show"))
+
     timestamp = time.strftime("%Y%m%d%H%M%S")
     filename = f"inspection_{inspection_id}_{timestamp}.pdf"
     output_path = os.path.join("pdf_exports", safe_folder, filename)
@@ -773,7 +773,7 @@ def generate_pdf(inspection_id):
         flash("PDF saved successfully!")
     else:
         flash("PDF generation skipped because wkhtmltopdf is not configured.")
-    
+
     return redirect(url_for("inspection_show"))
 
 @app.route("/inspection/<int:inspection_id>/choose_folder", methods=["GET"])
