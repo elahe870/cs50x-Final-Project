@@ -57,16 +57,20 @@
         <div class="d-grid">
             <button type="submit" class="btn btn-primary">✅ Create Form</button>
         </div>
+        <div class="mt-4">
+            <a href="/forms_show" class="btn btn-secondary">⬅ Back to Forms</a>
+        </div>
     </form>
 </div>
 
 <script>
-    // Update the value attributes of checkboxes to match their index
+    // Update required 
     function updateRequiredValues() {
-        const checkboxes = document.querySelectorAll("#fields .field-group .form-check-input");
-        checkboxes.forEach((checkbox, index) => {
-            checkbox.value = index.toString();
-        });
+    const fieldGroups = document.querySelectorAll("#fields .field-group");
+    fieldGroups.forEach((group, index) => {
+        const checkbox = group.querySelector(".form-check-input");
+        checkbox.value = index.toString();
+    });
     }
 
     document.getElementById("addField").addEventListener("click", function () {

@@ -235,16 +235,8 @@ def edit_form(form_id):
                        form_id, field_label, field_type, field_option, required, i+1)
 
         flash("Form updated successfully!")
-        ## SECIRITY ALERT SO OMMITED: return redirect(f"/forms_show/{form_id}/preview")
-        # Validate form_id before redirecting
-        # Validate form_id against the database
-        valid_form = db.execute("SELECT id FROM forms WHERE id = ?", form_id)
-        if valid_form:
-            ##Security considering
-            safe_url = f"/forms_show/{valid_form[0]['id']}/preview"
-            return redirect(safe_url)
-        else:
-            return redirect("/")
+        
+        return redirect("/forms_show")
 
     
     else:
@@ -497,7 +489,27 @@ def inspection_delete(inspection_id):
         # Delete related inspection_fields
         db.execute("DELETE FROM inspection_fields WHERE inspection_id = ?", inspection_id)
         # Delete related inspection_images
-        db.execute("DELETE FROM inspection_images WHERE inspection_id = ?", inspection_id)
+
+        # Get all image filenames for the given inspection
+        images = db.execute("SELECT id, filename FROM inspection_images WHERE inspection_id = ?", inspection_id)
+
+        for image in images:
+            filename = image["filename"]
+            image_id = image["id"]  # Get the image ID for deletion
+
+            # Build file path
+            filepath = os.path.join("static", "inspection_photos", filename)
+
+            # Delete the file from disk if it exists
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+            # Delete the record from the database
+            db.execute("DELETE FROM inspection_images WHERE id = ?", image_id)
+
+
+        #db.execute("DELETE FROM inspection_images WHERE inspection_id = ?", inspection_id) #old one
+        
         # Finally, delete the inspection itself
         db.execute("DELETE FROM inspections WHERE id = ?", inspection_id)
 
