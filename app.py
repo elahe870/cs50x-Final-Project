@@ -751,15 +751,19 @@ def generate_pdf(inspection_id):
     config = None
 
     # Define paths for Linux (Codespace/local bin) and Windows (local machine)
-    linux_path = '/workspaces/Finalproject/bin/wkhtmltopdf'
+    linux_path = '/usr/local/bin/wkhtmltopdf'
     windows_path = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+    project_bin_path = os.path.join(os.path.dirname(__file__), 'bin', 'wkhtmltopdf')
 
-    # Check if the Linux path exists and set config
-    if os.path.isfile(linux_path):
-        config = pdfkit.configuration(wkhtmltopdf=linux_path)
     # Check if the Windows path exists and set config
-    elif os.path.isfile(windows_path):
+    if os.path.isfile(windows_path):
         config = pdfkit.configuration(wkhtmltopdf=windows_path)
+    # Check if the Linux path exists and set config
+    elif os.path.isfile(linux_path):
+        config = pdfkit.configuration(wkhtmltopdf=linux_path)
+    # Check if the project bin path exists and set config
+    elif os.path.isfile(project_bin_path):
+        config = pdfkit.configuration(wkhtmltopdf=project_bin_path)
     else:
         flash("Warning: wkhtmltopdf binary not found. PDF generation will be disabled.")
         return redirect(url_for("inspection_show"))
