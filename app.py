@@ -750,18 +750,17 @@ def generate_pdf(inspection_id):
 
     config = None
 
-    # Define paths for Linux (Codespace/local bin) and Windows (local machine)
-    linux_path = '/usr/local/bin/wkhtmltopdf'
+    linux_path = '/usr/bin/wkhtmltopdf'  # Installed via apt
     windows_path = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
     project_bin_path = os.path.join(os.path.dirname(__file__), 'bin', 'wkhtmltopdf')
 
-    # Check if the Windows path exists and set config
+    # Check if the Windows path exists
     if os.path.isfile(windows_path):
         config = pdfkit.configuration(wkhtmltopdf=windows_path)
-    # Check if the Linux path exists and set config
+    # Check if the Linux (apt) path exists
     elif os.path.isfile(linux_path):
         config = pdfkit.configuration(wkhtmltopdf=linux_path)
-    # Check if the project bin path exists and set config
+    # Check if the binary exists in the project directory
     elif os.path.isfile(project_bin_path):
         config = pdfkit.configuration(wkhtmltopdf=project_bin_path)
     else:

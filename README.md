@@ -52,13 +52,11 @@
                You should see the installed version number displayed.
 
         For Linux:
-            1- Download the appropriate Linux package from the wkhtmltopdf downloads page.
-
-            2- Install the package using your distribution's package manager. For example, on Ubuntu:  
-                sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
-
-            3- Verify the installation by running: wkhtmltopdf --version
-
+            1- sudo apt install wkhtmltopdf
+            
+            2- Verify the installation by opening Command Prompt and running: wkhtmltopdf --version
+               You should see the installed version number displayed.
+               
         Note: Ensure that the wkhtmltopdf executable is in your system's PATH so that the application can access it.
 
         By following these steps, you'll have wkhtmltopdf properly installed, allowing the application to 
