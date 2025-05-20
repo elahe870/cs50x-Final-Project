@@ -751,17 +751,19 @@ def generate_pdf(inspection_id):
     config = None
 
     # Path for Linux (Codespace/local bin)
-    linux_path = './bin/wkhtmltopdf'
+    
+    linux_path = '/usr/local/bin/wkhtmltopdf'
 
     # Path for Windows (local machine)
     windows_path = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
     # Check which path exists and set config
-    if os.path.isfile(linux_path):
+    if linux_path:
         config = pdfkit.configuration(wkhtmltopdf=linux_path)
     elif os.path.isfile(windows_path):
         config = pdfkit.configuration(wkhtmltopdf=windows_path)
     else:
         print("Warning: wkhtmltopdf binary not found. PDF generation will be disabled.")
+        
     timestamp = time.strftime("%Y%m%d%H%M%S")
     filename = f"inspection_{inspection_id}_{timestamp}.pdf"
     output_path = os.path.join("pdf_exports", safe_folder, filename)
